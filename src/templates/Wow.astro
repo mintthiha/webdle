@@ -1,7 +1,7 @@
 ---
-import '@fontsource-variable/archivo/wdth.css';
+import '@fontsource-variable/besley/wght.css';
+import '@fontsource/league-gothic/400.css';
 import Base from '../layouts/Base.astro';
-import { flow, halftone, cover } from '../lib/art';
 import { toView } from '../lib/view';
 import type { Client } from '../schemas/client';
 
@@ -10,153 +10,268 @@ interface Props {
 }
 const { client } = Astro.props;
 const v = toView(client);
-const s = client.slug;
 
-const heroArt = halftone({ seed: `${s}-wo-hero`, step: 24 });
-const plates = [
-  flow({ seed: `${s}-wo-p1`, w: 1600, h: 900, step: 34 }),
-  halftone({ seed: `${s}-wo-p2`, w: 1600, h: 900, step: 28 }),
-  flow({ seed: `${s}-wo-p3`, w: 1600, h: 900, step: 26 }),
+/*
+ * The page is a wood-type broadside printed in three transparent inks: yellow (y), pink (p) and
+ * blue (b). `data-ink` names the plates an element is locked into; two letters means it is printed
+ * twice, which makes the overprint colour. src/scripts/wow-press.ts does the printing; without it
+ * the same elements fall back to flat CSS colour.
+ */
+const LOCKUP = ['b', 'p', 'y', 'pb', 'yp', 'b', 'y', 'p', 'yb', 'p', 'b', 'yp'];
+const lockup = (text: string, inks: string[], start = 0) => {
+  let slot = start;
+  return [...text].map((ch) => ({ ch, ink: ch.trim() ? inks[slot++ % inks.length] : '' }));
+};
+
+/*
+ * Rough font-size-per-measure for a fitted line, used until the script measures the real glyphs
+ * (and for good when there is no script). They err on the narrow side so a line never overflows.
+ */
+const CLAR_WIDTHS: [RegExp, number][] = [
+  [/[MW]/, 1.1],
+  [/[mw]/, 0.95],
+  [/[A-Z]/, 0.72],
+  [/[ijl.,:;!’']/, 0.42],
+  [/[frt]/, 0.52],
 ];
-const panelArt = (i: number) => flow({ seed: `${s}-wo-panel-${i}`, w: 800, h: 700, step: 40 });
+const kClar = (text: string) =>
+  (1 / [...text].reduce((sum, ch) => sum + (CLAR_WIDTHS.find(([re]) => re.test(ch))?.[1] ?? 0.61), 0)).toFixed(4);
+const kGoth = (text: string) => (1 / (text.length * 0.35)).toFixed(4);
+const clarBox = (text: string) =>
+  `--asc:${/’/.test(text) ? 0.87 : /[bdfhklt]/.test(text) ? 0.78 : /[A-Z0-9]/.test(text) ? 0.75 : 0.54};--desc:${/[gjpqy,;]/.test(text) ? 0.22 : 0.02}`;
 
-const rows =
-  client.archetype === 'writer'
-    ? v.publications.map((p, i) => ({
-        title: p.title,
-        meta: `${v.typeLabel[p.type]} · ${p.venue}`,
-        year: String(p.year),
-        art: cover({ title: p.title, sub: `${p.venue}, ${p.year}`, seed: `${s}-wo-${p.title}`, kind: (i + 2) % 4 }),
-      }))
-    : v.courses.map((c, i) => ({
-        title: c.course,
-        meta: c.institution,
-        year: '',
-        art: cover({ title: c.course, sub: c.institution, seed: `${s}-wo-${c.course}`, kind: (i + 2) % 4 }),
-      }));
+const first = lockup(v.firstName, LOCKUP);
+const nameLines = [
+  { word: v.firstName, letters: first },
+  ...(v.lastName ? [{ word: v.lastName, letters: lockup(v.lastName, LOCKUP, v.firstName.length) }] : []),
+];
+const roleLine = [v.role, client.location ?? (v.since ? `Since ${v.since}` : v.workLabel)].join(' · ');
+
+const words = client.bio.split(' ');
+
+const now = v.current
+  ? [v.nowLabel, v.current.role, v.current.institution]
+  : v.latest
+    ? [v.nowLabel, v.latest.title, `${v.latest.venue}, ${v.latest.year}`]
+    : [];
+const NOW_INKS = ['yp', 'b', 'p'];
 
 const record = [
-  ...v.education.map((c) => ({
-    big: String(c.year),
-    title: c.degree,
-    where: [c.institution, c.location].filter(Boolean).join(', '),
-  })),
   ...v.roles.map((r) => ({
-    big: v.period(r.startYear, r.endYear),
+    year: r.startYear,
+    period: v.period(r.startYear, r.endYear),
     title: r.role,
     where: [r.institution, r.department].filter(Boolean).join(' · '),
   })),
-];
+  ...v.education.map((c) => ({
+    year: c.year,
+    period: String(c.year),
+    title: c.degree,
+    where: [c.institution, c.location].filter(Boolean).join(', '),
+  })),
+].sort((a, b) => b.year - a.year);
+const YEAR_INKS = ['pb', 'yp', 'yb', 'p', 'b', 'y'];
 
-const chars = [...client.name.split(' ')[0].toUpperCase()];
-const chars2 = [...(client.name.split(' ').slice(1).join(' ') || '').toUpperCase()];
-const words = client.bio.split(' ');
-const ribbon = `${v.nowLabel}: ${v.nowLine}`;
+const courses = v.courses.map((c) => ({ title: c.course, meta: c.institution, url: undefined as string | undefined }));
+const publications = v.publications.map((p) => ({
+  title: p.title,
+  meta: `${v.typeLabel[p.type]} · ${p.venue} · ${p.year}`,
+  url: p.url,
+}));
+const writer = client.archetype === 'writer';
+const bands = writer ? publications : courses;
+const also = writer ? courses : publications;
+const BAND_INKS = ['y', 'p', 'b'];
+const tape = (bands.length ? bands : also).map((row) => row.title);
+const RAG = [0, 15, 5, 24, 9, 18];
+
+const TALK = 'Let’s talk.';
+let talkSlot = 0;
+const talkLines = TALK.split(' ').map((word) => {
+  const letters = lockup(word, ['y', 'yp', 'p'], talkSlot);
+  talkSlot += word.length;
+  return { word, letters };
+});
+
+const sections = [
+  { id: 'about', label: 'About', ink: 'p' },
+  { id: 'record', label: 'Record', ink: 'y' },
+  { id: 'work', label: v.workLabel, ink: 'b' },
+  { id: 'talk', label: 'Contact', ink: 'yp' },
+];
+const SWATCHES = ['y', 'p', 'b', 'yp', 'yb', 'pb', 'ypb'];
 ---
 
-<Base client={client} direction="wow" title={`${client.name} · ${v.role}`} themeColor="#2330c8">
+<Base client={client} direction="wow" title={`${client.name} · ${v.role}`} themeColor="#f4f4f0">
+  <script is:inline>
+    // Hold the flat CSS inks back while the press warms up; give them back if it never does.
+    document.documentElement.classList.add('wo-js');
+    setTimeout(function () {
+      if (!document.querySelector('.wo.is-press')) document.documentElement.classList.remove('wo-js');
+    }, 6000);
+  </script>
+
   <div class="wo">
-    <div class="wo-progress" aria-hidden="true"></div>
-
-    <header class="wo-top">
-      <a class="wo-brand" href="#top">{client.name}</a>
-      <nav aria-label="Main">
-        <a href="#statement">About</a>
-        <a href="#record">Record</a>
-        <a href="#work">{v.workLabel}</a>
-        <a href="#talk">Contact</a>
-      </nav>
-    </header>
-
-    <section class="wo-hero" id="top">
-      <div class="wo-outline" aria-hidden="true">
-        <p class="wo-outline-a">{client.name.toUpperCase()} · {client.name.toUpperCase()} · {client.name.toUpperCase()}</p>
-        <p class="wo-outline-b">{v.role.toUpperCase()} · {v.role.toUpperCase()} · {v.role.toUpperCase()} · {v.role.toUpperCase()}</p>
-      </div>
-      <div class="wo-hero-art" aria-hidden="true">
-        <div class="wo-hero-parallax" set:html={heroArt} />
-      </div>
-      <div class="wo-hero-copy">
-        <h1 class="wo-name" aria-label={client.name}>
-          <span class="wo-line" aria-hidden="true">{chars.map((c) => <span class="wo-char">{c}</span>)}</span>
-          <span class="wo-line" aria-hidden="true">{chars2.map((c) => <span class="wo-char">{c === ' ' ? ' ' : c}</span>)}</span>
-        </h1>
-        <p class="wo-tag wo-hero-fade">{client.tagline}</p>
-        <div class="wo-actions wo-hero-fade">
-          <a class="wo-btn wo-mag" href="#talk">Let's talk</a>
-          <a class="wo-btn wo-btn-line wo-mag" href="#work">See the {v.workLabel.toLowerCase()}</a>
-        </div>
-      </div>
-      <p class="wo-scroll wo-hero-fade" aria-hidden="true"><span></span>Scroll</p>
-    </section>
-
-    <section class="wo-statement" id="statement">
-      <p aria-label={client.bio}>
-        {words.map((w) => <span class="wo-word" aria-hidden="true">{w} </span>)}
-      </p>
-    </section>
-
-    <div class="wo-ribbon" aria-label={ribbon}>
-      <div class="wo-ribbon-track" aria-hidden="true">
-        {[0, 1].map(() => (
-          <ul>
-            {[0, 1, 2, 3].map(() => <li>{ribbon}<span>✦</span></li>)}
-          </ul>
-        ))}
-      </div>
-    </div>
-
-    <section class="wo-hscroll" id="record">
-      <h2 class="wo-sec-title">Record</h2>
-      <div class="wo-htrack">
-        {record.map((r, i) => (
-          <article class="wo-panel">
-            <div class="wo-panel-art" aria-hidden="true" set:html={panelArt(i)} />
-            <p class="wo-panel-big">{r.big}</p>
-            <div>
-              <h3>{r.title}</h3>
-              <p>{r.where}</p>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-
-    <section class="wo-work" id="work">
-      <h2 class="wo-sec-title">{client.archetype === 'teacher' ? 'Courses' : 'Selected work'}</h2>
-      <ul class="wo-rows">
-        {rows.map((r) => (
-          <li class="wo-row" tabindex="0">
-            <div class="wo-row-main">
-              <h3>{r.title}</h3>
-              <p>{r.meta}</p>
-            </div>
-            {r.year && <p class="wo-row-year">{r.year}</p>}
-            <div class="wo-preview" aria-hidden="true" set:html={r.art} />
+    <nav class="wo-nav" aria-label="Main">
+      <a class="wo-nav-home" href="#top">{client.name}</a>
+      <ul>
+        {sections.map((s) => (
+          <li>
+            <a href={`#${s.id}`}><i style={`--c:var(--${s.ink})`} aria-hidden="true" />{s.label}</a>
           </li>
         ))}
       </ul>
+    </nav>
+
+    <div class="wo-stage">
+      <div class="wo-pin">
+        <section class="wo-sheet wo-hero" id="top" data-sheet="hero">
+          <canvas class="wo-ink" aria-hidden="true"></canvas>
+          <div class="wo-hero-body">
+            <div class="wo-top">
+              <div class="wo-marks" aria-hidden="true">
+                <span class="wo-swatches">{SWATCHES.map((ink) => <i data-ink={ink} data-rect />)}</span>
+                <svg class="wo-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5" /><path d="M12 0v24M0 12h24" /></svg>
+              </div>
+              <!-- Shown by the script: deals the inks to different letters and pulls the sheet again. -->
+              <button class="wo-pull" type="button" hidden>Print it again</button>
+            </div>
+
+            <div class="wo-poster">
+              <h1 class="wo-name" aria-label={client.name}>
+                {nameLines.map((line, i) => (
+                  <Fragment>
+                    {i > 0 && ' '}
+                    <span class="wo-fit wo-clar" aria-hidden="true" style={`--k:${kClar(line.word)};${clarBox(line.word)}`}><span class="wo-fit-in">{line.letters.map((l) => (l.ink ? <span data-ink={l.ink}><i class="wo-bl" />{l.ch}</span> : <span class="wo-sp" />))}</span></span>
+                  </Fragment>
+                ))}
+              </h1>
+              <p class="wo-role">
+                <span class="wo-sr">{roleLine}</span>
+                <span class="wo-fit wo-goth" aria-hidden="true" style={`--k:${kGoth(roleLine)}`}><span class="wo-fit-in"><span data-ink="pb"><i class="wo-bl" />{roleLine.toUpperCase()}</span></span></span>
+              </p>
+              <div class="wo-lede">
+                <p class="wo-tag">{client.tagline}</p>
+                <div class="wo-actions">
+                  <a class="wo-btn" href="#talk">Let’s talk</a>
+                  <a class="wo-btn wo-btn-open" href="#work">See the {v.workLabel.toLowerCase()}</a>
+                </div>
+              </div>
+            </div>
+
+            <p class="wo-cue" aria-hidden="true">
+              <svg viewBox="0 0 12 28"><path d="M6 0v26M1 21l5 5 5-5" /></svg><span>Scroll into the ink</span>
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <section class="wo-sheet wo-about" id="about" data-sheet="about" aria-labelledby="wo-about-h">
+      <canvas class="wo-ink" aria-hidden="true"></canvas>
+      <span class="wo-flood" data-ink="p" data-rect aria-hidden="true"></span>
+      <div class="wo-sheet-in">
+        <h2 class="wo-sr" id="wo-about-h">About {v.firstName}</h2>
+        <p class="wo-statement">{words.map((w) => <span class="wo-w">{w} </span>)}</p>
+      </div>
     </section>
 
-    <section class="wo-reel" aria-hidden="true">
-      {plates.map((p) => <div class="wo-plate" set:html={p} />)}
+    {tape.length > 0 && (
+      <div class="wo-tape" aria-hidden="true">
+        <div class="wo-tape-run">
+          {[0, 1, 2, 3].map(() => tape.map((title, i) => <span>{title}<i style={`--c:var(--${BAND_INKS[i % 3]})`} /></span>))}
+        </div>
+      </div>
+    )}
+
+    <section class="wo-sheet wo-record" id="record" data-sheet aria-labelledby="wo-record-h">
+      <canvas class="wo-ink" aria-hidden="true"></canvas>
+      <div class="wo-sheet-in">
+        <h2 class="wo-sr" id="wo-record-h">Record</h2>
+        {now.length > 0 && (
+          <p class="wo-now">
+            <span class="wo-sr">{now[0]}: {now.slice(1).join(', ')}</span>
+            {now.map((line, i) => (
+              <span class="wo-fit wo-goth" aria-hidden="true" style={`--k:${kGoth(line)}`}><span class="wo-fit-in"><span data-ink={NOW_INKS[i % NOW_INKS.length]}><i class="wo-bl" />{line.toUpperCase()}</span></span></span>
+            ))}
+          </p>
+        )}
+        <ol class="wo-years">
+          {record.map((r, i) => (
+            <li data-rv>
+              <span class="wo-num" aria-hidden="true"><span data-ink={YEAR_INKS[i % YEAR_INKS.length]}><i class="wo-bl" />{r.year}</span></span>
+              <div class="wo-entry">
+                <h3>{r.title}</h3>
+                <p>{r.where}</p>
+                <p class="wo-label">{r.period}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
     </section>
 
-    <section class="wo-talk" id="talk">
-      <h2>Let's talk.</h2>
-      <!-- [TODO: form endpoint] No form service chosen yet; the form is inert in this demo. -->
-      <form class="wo-form">
-        <label>Name<input type="text" name="name" autocomplete="name" /></label>
-        <label>Email<input type="email" name="email" autocomplete="email" /></label>
-        <label class="wo-wide">Message<textarea name="message" rows="3"></textarea></label>
-        <button type="button" disabled class="wo-send">Send message</button>
-        <p>Demo only. The form is not connected on sample sites.</p>
-      </form>
+    <section class="wo-sheet wo-work" id="work" data-sheet aria-labelledby="wo-work-h">
+      <canvas class="wo-ink" aria-hidden="true"></canvas>
+      <div class="wo-sheet-in">
+        <h2 class="wo-h2" id="wo-work-h" data-rv>{writer ? 'Selected work' : 'Courses'}</h2>
+        {bands.length > 0 && (
+          <ul class="wo-bands">
+            {bands.map((row, i) => (
+              <li class={`wo-band on-${BAND_INKS[i % 3]}`} style={`--rag:${RAG[i % RAG.length]}%`} data-rv>
+                <span class="wo-band-ink" data-ink={BAND_INKS[i % 3]} data-rect aria-hidden="true"></span>
+                <h3>{row.url ? <a href={row.url}>{row.title}</a> : row.title}</h3>
+                <p class="wo-label">{row.meta}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+        {also.length > 0 && (
+          <div class="wo-also" data-rv>
+            <h3>{writer ? 'Teaching' : 'Writing'}</h3>
+            <ul>
+              {also.map((row) => (
+                <li>
+                  <span class="wo-also-t">{row.url ? <a href={row.url}>{row.title}</a> : row.title}</span>
+                  <span class="wo-label">{row.meta}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </section>
 
-    <footer class="wo-foot">
-      <span>© {new Date().getFullYear()} {client.name}</span>
-      <span>Sample site with fictional content, a demo by webdle.</span>
+    <section class="wo-sheet wo-talk" id="talk" data-sheet aria-labelledby="wo-talk-h">
+      <canvas class="wo-ink" aria-hidden="true"></canvas>
+      <span class="wo-flood" data-ink="b" data-rect aria-hidden="true"></span>
+      <div class="wo-sheet-in">
+        <h2 class="wo-talk-h" id="wo-talk-h" aria-label={TALK}>
+          {talkLines.map((line, i) => (
+            <Fragment>
+              {i > 0 && ' '}
+              <span class="wo-fit wo-clar" aria-hidden="true" style={`--k:${kClar(line.word)};${clarBox(line.word)}`}><span class="wo-fit-in">{line.letters.map((l) => <span data-ink={l.ink} data-knock="b"><i class="wo-bl" />{l.ch}</span>)}</span></span>
+            </Fragment>
+          ))}
+        </h2>
+        <!-- [TODO: form endpoint] No form service chosen yet; the form is inert in this demo. -->
+        <form class="wo-coupon" data-rv>
+          <span class="wo-coupon-paper" data-knock="b" data-rect aria-hidden="true"></span>
+          <svg class="wo-scissors" viewBox="0 0 34 20" aria-hidden="true"><circle cx="5.5" cy="5" r="3.5" /><circle cx="5.5" cy="15" r="3.5" /><path d="M8.5 7 33 17M8.5 13 33 3" /></svg>
+          <label>Name<input type="text" name="name" autocomplete="name" /></label>
+          <label>Email<input type="email" name="email" autocomplete="email" /></label>
+          <label class="wo-wide">Message<textarea name="message" rows="3"></textarea></label>
+          <button type="button" disabled class="wo-send">Send message</button>
+          <p>Demo only. The form is not connected on sample sites.</p>
+        </form>
+      </div>
+    </section>
+
+    <footer class="wo-colophon">
+      <span class="wo-swatches" aria-hidden="true">{SWATCHES.map((ink) => <i style={`--c:var(--${ink})`} />)}</span>
+      <p>© {new Date().getFullYear()} {client.name}</p>
+      <p>Sample site with fictional content, a demo by webdle.</p>
+      <p>Set in Besley and League Gothic. Printed in three inks.</p>
     </footer>
   </div>
 </Base>
@@ -167,564 +282,916 @@ const ribbon = `${v.nowLabel}: ${v.nowLine}`;
 
 <style is:global>
   html[data-direction='wow'] {
-    background: oklch(0.42 0.26 265);
+    background: #f4f4f0;
+    scrollbar-color: #1b1530 #f4f4f0;
   }
   .wo {
-    --blue: oklch(0.42 0.26 265);
-    --blue-lit: oklch(0.78 0.14 265);
-    --ink: oklch(0.14 0.03 270);
-    --white: oklch(0.97 0.01 270);
-    --vermilion: oklch(0.68 0.24 35);
-    --art-1: oklch(0.68 0.24 35);
-    --art-2: oklch(0.97 0.01 270);
-    --art-3: oklch(0.78 0.14 265);
-    --art-4: oklch(0.55 0.22 265);
-    --art-5: oklch(0.14 0.03 270);
-    --cv-bg: oklch(0.97 0.01 270);
-    --cv-ink: oklch(0.14 0.03 270);
-    --cv-font: 'Archivo Variable', sans-serif;
-    --cv-weight: 800;
+    /* Paper, three inks, and the four colours their overprints make. wow-press.ts reads these. */
+    --paper: #f4f4f0;
+    --y: #ffd21f;
+    --p: #ff4577;
+    --b: #1a5cf0;
+    --yp: #ff5a1f;
+    --yb: #14a04e;
+    --pb: #2d1e9e;
+    --ypb: #1b1530;
+    --key: #1b1530;
+    --clar: 'Besley Variable', Rockwell, Georgia, serif;
+    --goth: 'League Gothic', 'Arial Narrow', sans-serif;
+    --pad: clamp(1rem, 3.4vw, 3rem);
     --ease: cubic-bezier(0.16, 1, 0.3, 1);
-    font-family: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif;
-    font-stretch: 100%;
-    color: var(--white);
-    background: var(--blue);
+    /* The measure a fitted line fills. The hero replaces it with a pixel value. */
+    --m: 100cqi;
+    font-family: var(--clar);
+    font-size: 1.0625rem;
     line-height: 1.5;
+    color: var(--key);
+    background: var(--paper);
+    caret-color: var(--p);
     overflow-x: clip;
+    -webkit-font-smoothing: antialiased;
   }
-  .wo svg {
-    display: block;
+  .wo ::selection {
+    background: var(--y);
+    color: var(--key);
+  }
+  .wo :focus-visible {
+    outline: 3px solid var(--key);
+    outline-offset: 3px;
+  }
+  .wo a {
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.18em;
+  }
+  .wo-band a,
+  .wo-also a {
+    text-decoration-line: underline;
+  }
+  .wo-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* ---- sheets and ink ---- */
+  .wo-sheet {
+    position: relative;
+    isolation: isolate;
+    background: var(--paper);
+  }
+  .wo-sheet-in {
+    position: relative;
+    container-type: inline-size;
+    padding-inline: var(--pad);
+  }
+  .wo-ink {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
     width: 100%;
     height: 100%;
+    display: none;
+    pointer-events: none;
   }
-  .wo h1,
-  .wo h2,
-  .wo h3 {
-    margin: 0;
-    font-weight: 850;
-    text-transform: uppercase;
-    letter-spacing: -0.02em;
-    line-height: 0.92;
+  .wo.is-press .wo-ink {
+    display: block;
   }
-  .wo a:focus-visible,
-  .wo button:focus-visible,
-  .wo input:focus-visible,
-  .wo textarea:focus-visible,
-  .wo .wo-row:focus-visible {
-    outline: 3px solid var(--vermilion);
-    outline-offset: 4px;
+  .wo-flood {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
   }
-  .wo-progress {
-    position: fixed;
-    inset: 0 0 auto 0;
-    z-index: 60;
-    height: 4px;
-    background: var(--vermilion);
-    transform: scaleX(0);
-    transform-origin: left;
+  .wo [data-ink='y'] { --c: var(--y); }
+  .wo [data-ink='p'] { --c: var(--p); }
+  .wo [data-ink='b'] { --c: var(--b); }
+  .wo [data-ink='yp'] { --c: var(--yp); }
+  .wo [data-ink='yb'] { --c: var(--yb); }
+  .wo [data-ink='pb'] { --c: var(--pb); }
+  .wo [data-ink='ypb'] { --c: var(--ypb); }
+  .wo [data-ink] {
+    color: var(--c);
+    mix-blend-mode: multiply;
+  }
+  .wo [data-rect][data-ink] {
+    background: var(--c);
+  }
+  .wo [data-knock] {
+    mix-blend-mode: normal;
+  }
+  .wo-coupon-paper {
+    background: var(--paper);
+  }
+  /* With the press running, the canvas carries the ink and the elements only hold its place. */
+  .wo-js .wo [data-ink],
+  .wo-js .wo [data-knock] {
+    color: transparent;
+    background: none;
+    mix-blend-mode: normal;
+  }
+  .wo-bl {
+    display: inline-block;
+    width: 0;
+    height: 0;
+  }
+  /* A word space inside a fitted line (a name with more than two parts). */
+  .wo-sp {
+    display: inline-block;
+    width: 0.3em;
   }
 
-  /* ---- top ---- */
-  .wo-top {
+  /* ---- fitted poster lines: font-size is a fraction (--k) of the measure ---- */
+  .wo-fit {
+    display: block;
+    position: relative;
+    font-size: calc(var(--m) * min(var(--k), var(--kmax, 1)));
+    height: calc((var(--asc) + var(--desc)) * 1em);
+  }
+  .wo-fit-in {
+    position: absolute;
+    left: 0;
+    top: calc((var(--asc) - var(--base)) * 1em);
+    display: block;
+    line-height: 1;
+    white-space: nowrap;
+    /* The glyphs' line boxes reach well past their ink; they must not swallow clicks meant for
+       the controls they overlap. */
+    pointer-events: none;
+  }
+  .wo-clar {
+    --asc: 0.76;
+    --desc: 0.02;
+    --base: 0.91;
+    font-family: var(--clar);
+    font-weight: 900;
+    /* Tight enough that neighbouring letters overprint where they meet. */
+    letter-spacing: -0.085em;
+  }
+  .wo-goth {
+    --asc: 0.75;
+    --desc: 0.01;
+    --base: 0.87;
+    --kmax: 0.34;
+    font-family: var(--goth);
+    font-weight: 400;
+  }
+
+  /* ---- fixed nav: paper tickets with an ink chip ---- */
+  .wo-nav {
     position: fixed;
-    inset: 0 0 auto 0;
-    z-index: 50;
+    z-index: 40;
+    inset: 0.75rem var(--pad) auto;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-    padding: 1.1rem clamp(1.25rem, 4vw, 3rem);
-    mix-blend-mode: difference;
-    color: #fff;
-  }
-  .wo-brand {
-    font-weight: 850;
+    align-items: start;
+    gap: 0.5rem;
+    pointer-events: none;
+    font: 400 1.0625rem / 1 var(--goth);
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    letter-spacing: -0.01em;
-    color: inherit;
-    text-decoration: none;
   }
-  .wo-top nav {
+  .wo-nav ul {
     display: flex;
-    gap: clamp(1rem, 3vw, 2rem);
-    font-weight: 600;
-    font-size: 0.95rem;
+    gap: 0.3rem;
+    margin-left: auto;
   }
-  .wo-top nav a {
-    color: inherit;
+  .wo-nav a {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    padding: 0.52em 0.7em 0.42em;
+    border: 1.5px solid var(--key);
+    background: var(--paper);
+    color: var(--key);
     text-decoration: none;
+    transition: background 0.2s, color 0.2s;
   }
-  .wo-top nav a:hover {
-    text-decoration: underline;
-    text-underline-offset: 6px;
-    text-decoration-thickness: 2px;
+  .wo-nav i {
+    width: 0.72em;
+    height: 0.72em;
+    margin-top: -0.1em;
+    background: var(--c);
+    transition: rotate 0.5s var(--ease), scale 0.5s var(--ease);
+  }
+  .wo-nav a:hover i {
+    rotate: 135deg;
+    scale: 1.2;
+  }
+  .wo-nav a:hover,
+  .wo-nav a[aria-current='true'] {
+    background: var(--key);
+    color: var(--paper);
+  }
+  .wo-nav a:focus-visible {
+    outline-offset: 2px;
+    box-shadow: 0 0 0 7px var(--paper);
+  }
+  .wo-nav-home {
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s, background 0.2s, color 0.2s !important;
+  }
+  .wo.is-past .wo-nav-home {
+    visibility: visible;
+    opacity: 1;
   }
 
-  /* ---- hero ---- */
+  /* ---- hero: the broadside ---- */
   .wo-hero {
-    --sx: 70%;
-    --sy: 40%;
+    min-height: 100svh;
+    display: grid;
+  }
+  .wo-hero-body {
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem var(--pad) clamp(1rem, 2.4vw, 1.75rem);
+    min-width: 0;
+  }
+  .wo-top {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    height: 2.3rem;
+  }
+  .wo-marks {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .wo-swatches {
+    display: flex;
+    gap: 0.3rem;
+  }
+  .wo-swatches i {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+  .wo-pull {
+    padding: 0.52em 0.7em 0.42em;
+    border: 1.5px solid var(--key);
+    border-radius: 0;
+    background: var(--paper);
+    color: var(--key);
+    font: 400 1.0625rem / 1 var(--goth);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .wo-pull:hover {
+    background: var(--key);
+    color: var(--paper);
+  }
+  .wo-pull:active {
+    translate: 0 1px;
+  }
+  .wo-target {
+    width: 1.5rem;
+    height: 1.5rem;
+    fill: none;
+    stroke: var(--key);
+    stroke-width: 1;
+  }
+  .wo-poster {
     position: relative;
+    width: var(--m);
+    margin-block: auto;
+    padding-block: clamp(0.75rem, 2vw, 1.5rem);
+  }
+  /* The lines kiss: ascenders of one overprint the feet of the last. */
+  .wo-name .wo-fit + .wo-fit {
+    margin-top: calc(var(--m) * -0.014);
+  }
+  .wo-role {
+    margin-top: calc(var(--m) * 0.024);
+  }
+  .wo-role .wo-goth {
+    --kmax: 0.16;
+  }
+  .wo-lede {
+    width: min(100cqi, 38rem);
+    margin-top: clamp(1.25rem, 3vw, 2rem);
+  }
+  .wo-tag {
+    font-size: clamp(1.25rem, 1rem + 1vw, 1.7rem);
+    font-weight: 600;
+    line-height: 1.22;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .wo-actions {
+    margin-top: clamp(1rem, 2vw, 1.5rem);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  /* Wide screens: both name lines share one size and the copy sits in the notch beside the shorter. */
+  .wo-poster[data-notch] .wo-name .wo-fit {
+    font-size: calc(var(--m) * var(--kname));
+  }
+  .wo-poster[data-notch] .wo-lede {
+    position: absolute;
+    right: 0;
+    top: calc(var(--m) * var(--nt));
+    width: calc(var(--m) * var(--nw));
+    height: calc(var(--m) * var(--nh));
+    margin: 0;
+    padding-bottom: calc(var(--m) * 0.034);
+    display: grid;
+    align-content: end;
+  }
+  /* Short, wide screens: the name is as tall as the screen allows and the copy stands beside it. */
+  .wo-poster[data-beside] .wo-lede {
+    position: absolute;
+    left: calc(var(--m) + var(--bg));
+    bottom: clamp(0.75rem, 2vw, 1.5rem);
+    width: var(--bw);
+    margin: 0;
+  }
+  .wo-poster[data-tight] .wo-tag {
+    font-size: clamp(1.1rem, 0.9rem + 0.45vw, 1.3rem);
+    line-height: 1.25;
+  }
+  .wo-poster[data-tight] .wo-actions {
+    margin-top: 0.85rem;
+  }
+  .wo-poster[data-tight] .wo-btn {
+    font-size: 1.2rem;
+  }
+  .wo-cue {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font: 400 1.0625rem / 1 var(--goth);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+  .wo-cue svg {
+    width: 0.75rem;
+    height: 1.75rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+  }
+
+  .wo-btn,
+  .wo-send {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.72em 1.15em 0.6em;
+    border: 2px solid var(--key);
+    border-radius: 0;
+    background: var(--key);
+    color: var(--paper);
+    font: 400 clamp(1.3rem, 1.1rem + 0.6vw, 1.6rem) / 1 var(--goth);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  /* Hover pulls a second colour across the block, like a brayer. */
+  .wo-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--p);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.5s var(--ease);
+  }
+  .wo-btn:hover,
+  .wo-btn:focus-visible {
+    color: var(--key);
+  }
+  .wo-btn:hover::before,
+  .wo-btn:focus-visible::before {
+    transform: scaleX(1);
+  }
+  .wo-btn:active {
+    translate: 0 1px;
+  }
+  .wo-btn-open {
+    background: var(--paper);
+    color: var(--key);
+  }
+  .wo-btn-open::before {
+    background: var(--y);
+  }
+
+  /* ---- about: inside the pink ---- */
+  .wo-about {
+    background: var(--p);
+  }
+  .wo-about .wo-sheet-in {
     min-height: 100svh;
     display: grid;
     align-items: center;
-    padding: 7rem clamp(1.25rem, 4vw, 3rem) 4rem;
-    overflow: hidden;
-    isolation: isolate;
-    background:
-      radial-gradient(38rem circle at var(--sx) var(--sy), oklch(0.5 0.27 265) 0%, transparent 70%),
-      var(--blue);
+    padding-block: clamp(5rem, 14vh, 9rem);
   }
-  .wo-outline {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    display: grid;
-    align-content: space-between;
-    padding-block: 7rem 3rem;
-    overflow: hidden;
-    pointer-events: none;
-  }
-  .wo-outline p {
-    margin: 0;
-    white-space: nowrap;
-    font-weight: 900;
-    font-stretch: 125%;
-    font-size: clamp(5rem, 15vw, 12rem);
-    line-height: 0.9;
-    color: transparent;
-    -webkit-text-stroke: 1.5px oklch(0.7 0.12 265 / 0.45);
-  }
-  .wo-outline-b {
-    margin-left: -30vw !important;
-  }
-  .wo-hero-art {
-    position: absolute;
-    right: clamp(-6rem, -4vw, 0rem);
-    top: 50%;
-    width: min(62vw, 46rem);
-    aspect-ratio: 1;
-    translate: 0 -50%;
-    z-index: -1;
-  }
-  .wo-hero-parallax {
-    width: 100%;
-    height: 100%;
-    mix-blend-mode: screen;
-    opacity: 0.95;
-    mask-image: radial-gradient(circle at center, #000 38%, transparent 70%);
-  }
-  .wo-hero-copy {
-    max-width: 44rem;
-  }
-  .wo-name {
-    font-size: clamp(3.4rem, 12vw, 6rem);
-    font-stretch: 75%;
-    font-weight: 900;
-    line-height: 0.88;
-    letter-spacing: -0.015em;
-  }
-  .wo-line {
-    display: block;
-    overflow: hidden;
-    padding-bottom: 0.05em;
-  }
-  .wo-char {
-    display: inline-block;
-    will-change: transform;
-  }
-  .wo-tag {
-    margin: 1.75rem 0 0;
-    max-width: 30ch;
-    font-size: clamp(1.15rem, 1.8vw, 1.5rem);
-    font-weight: 500;
-    line-height: 1.35;
-  }
-  .wo-actions {
-    margin-top: 2.25rem;
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-  .wo-btn {
-    display: inline-block;
-    padding: 1rem 1.75rem;
-    border-radius: 999px;
-    background: var(--vermilion);
-    color: var(--ink);
-    font-weight: 800;
-    font-size: 1.05rem;
-    text-decoration: none;
-    border: 2px solid var(--vermilion);
-    transition: background 0.3s, color 0.3s;
-  }
-  .wo-btn:hover {
-    background: var(--white);
-    border-color: var(--white);
-  }
-  .wo-btn-line {
-    background: transparent;
-    color: var(--white);
-    border-color: oklch(0.97 0.01 270 / 0.6);
-  }
-  .wo-btn-line:hover {
-    background: var(--white);
-    color: var(--blue);
-  }
-  .wo-scroll {
-    position: absolute;
-    left: clamp(1.25rem, 4vw, 3rem);
-    bottom: 1.75rem;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
-  .wo-scroll span {
-    width: 3.5rem;
-    height: 2px;
-    background: var(--white);
-    transform-origin: left;
-  }
-
-  /* ---- statement ---- */
   .wo-statement {
-    background: var(--ink);
-    padding: clamp(6rem, 14vw, 12rem) clamp(1.25rem, 4vw, 3rem);
-  }
-  .wo-statement p {
-    margin: 0 auto;
-    max-width: 62rem;
-    font-size: clamp(1.75rem, 4.2vw, 3.4rem);
-    font-weight: 700;
-    line-height: 1.12;
-    letter-spacing: -0.015em;
+    max-width: 21em;
+    margin-left: clamp(0rem, 8vw, 9rem);
+    font-size: clamp(1.5rem, 0.95rem + 2.5vw, 3.1rem);
+    font-weight: 650;
+    line-height: 1.17;
+    letter-spacing: -0.014em;
     text-wrap: pretty;
   }
-  .wo-word {
-    display: inline;
+  .wo-about ::selection {
+    background: var(--key);
+    color: var(--paper);
   }
 
-  /* ---- ribbon ---- */
-  .wo-ribbon {
-    background: var(--vermilion);
-    color: var(--ink);
-    overflow: hidden;
-    padding: 1.1rem 0;
-    transform: rotate(-1.4deg) scale(1.03);
-    margin-block: -1rem;
+  /* ---- record: poster lines, then years in wood type ---- */
+  .wo-record .wo-sheet-in {
+    padding-block: clamp(4.5rem, 10vw, 9rem) clamp(3rem, 7vw, 6rem);
+  }
+  .wo-now {
+    display: grid;
+    gap: calc(100cqi * 0.014);
+  }
+  .wo-years {
+    --nf: clamp(5.5rem, 18.5vw, 17rem);
+    margin-top: clamp(3.5rem, 8vw, 7rem);
+  }
+  .wo-years li {
     position: relative;
-    z-index: 2;
+    display: grid;
+    grid-template-columns: calc(var(--nf) * 2.5) minmax(0, 1fr);
+    column-gap: clamp(1.5rem, 4vw, 4rem);
+    align-items: end;
+    padding-block: clamp(1.5rem, 3vw, 2.5rem) clamp(1.25rem, 2.6vw, 2.1rem);
+    padding-top: calc(0.42rem + clamp(1.5rem, 3vw, 2.5rem));
   }
-  .wo-ribbon-track {
-    display: flex;
-    width: max-content;
+  /* A thick-and-thin rule, as a printer would set between entries. */
+  .wo-years li::before,
+  .wo-years li::after {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 0.42rem;
+    background: var(--key);
+    transform-origin: left;
+    transition: transform 1.1s var(--ease);
   }
-  .wo-ribbon-track ul {
-    display: flex;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  .wo-years li::after {
+    top: 0.7rem;
+    height: 1.5px;
+    transition-delay: 0.12s;
+  }
+  .wo-num {
+    font: 900 var(--nf) / 0.72 var(--clar);
+    letter-spacing: -0.055em;
     white-space: nowrap;
-    font-size: clamp(1.4rem, 3vw, 2.4rem);
-    font-weight: 850;
+    pointer-events: none;
+  }
+  .wo-entry {
+    padding-bottom: 0.3rem;
+    transition: transform 0.6s var(--ease);
+  }
+  .wo-entry h3 {
+    font-size: clamp(1.4rem, 1rem + 1.5vw, 2.25rem);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.018em;
+    text-wrap: balance;
+  }
+  .wo-entry p {
+    margin-top: 0.5rem;
+    max-width: 36ch;
+  }
+  .wo-label {
+    font: 400 1.1875rem / 1.15 var(--goth);
+    letter-spacing: 0.07em;
     text-transform: uppercase;
   }
-  .wo-ribbon-track li {
-    display: inline-flex;
-    gap: 1.5rem;
-    padding-right: 1.5rem;
-    align-items: center;
+  .wo-entry .wo-label {
+    margin-top: 0.75rem;
   }
 
-  /* ---- record (horizontal) ---- */
-  .wo-hscroll {
+  /* ---- work: one band of ink per course, each lapping the next ---- */
+  .wo-work .wo-sheet-in {
+    padding-block: clamp(3.5rem, 8vw, 7rem) clamp(3.5rem, 8vw, 7rem);
+  }
+  /* The tape: what is taught or written, running sideways between sheets. */
+  .wo-tape {
     position: relative;
-    background: var(--blue);
-    padding: clamp(5rem, 9vw, 7rem) 0 clamp(4rem, 8vw, 6rem);
-    overflow-x: auto;
-    scrollbar-width: thin;
-  }
-  .wo-hscroll.is-pinned {
-    height: 100svh;
+    z-index: 2;
     overflow: hidden;
-    padding-bottom: 0;
-    display: flex;
-    flex-direction: column;
+    background: var(--key);
+    color: var(--paper);
+    padding: 0.42em 0 0.3em;
+    font: 400 clamp(2.4rem, 1.4rem + 4.6vw, 5.5rem) / 1 var(--goth);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    white-space: nowrap;
   }
-  .wo-sec-title {
-    padding: 0 clamp(1.25rem, 4vw, 3rem);
-    font-size: clamp(2.5rem, 7vw, 5.5rem);
-    margin-bottom: clamp(1.5rem, 4vw, 3rem);
-  }
-  .wo-htrack {
+  .wo-tape-run {
     display: flex;
-    gap: clamp(1rem, 2vw, 2rem);
     width: max-content;
-    padding: 0 clamp(1.25rem, 4vw, 3rem);
-    flex: 1;
-    align-items: stretch;
-    margin-bottom: clamp(2rem, 5vw, 4rem);
+    will-change: transform;
   }
-  .wo-hscroll:not(.is-pinned) .wo-htrack {
-    flex: none;
-    min-height: 26rem;
+  .wo-tape span {
+    display: inline-flex;
+    align-items: center;
   }
-  .wo-panel {
+  .wo-tape i {
+    width: 0.36em;
+    height: 0.36em;
+    margin: -0.08em 0.5em 0;
+    background: var(--c);
+  }
+  .wo-h2 {
+    clip-path: inset(-0.15em -0.1em -0.3em);
+    transition: clip-path 1.1s var(--ease), translate 1.1s var(--ease);
+    font-size: clamp(3.2rem, 1rem + 9vw, 9rem);
+    font-weight: 900;
+    line-height: 0.9;
+    letter-spacing: -0.05em;
+    margin-bottom: clamp(2rem, 4.5vw, 4rem);
+  }
+  .wo-bands {
+    --lap: clamp(0.6rem, 1.3vw, 1.2rem);
+  }
+  .wo-band {
     position: relative;
-    flex: 0 0 clamp(19rem, 46vw, 40rem);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 2rem;
-    padding: clamp(1.5rem, 3vw, 2.5rem);
-    border: 2px solid oklch(0.97 0.01 270 / 0.35);
-    border-radius: 1.75rem;
-    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: 2rem;
+    row-gap: 0.4rem;
+    padding: clamp(1.4rem, 3vw, 2.75rem) calc(var(--rag) + 1rem) clamp(1.2rem, 2.7vw, 2.4rem) 0;
+  }
+  .wo-band-ink {
+    position: absolute;
+    z-index: -1;
+    inset: calc(var(--lap) * -1) calc(var(--rag) - var(--pad)) calc(var(--lap) * -1) calc(var(--pad) * -1);
+  }
+  .wo-band h3,
+  .wo-band .wo-label {
+    --rv: calc(var(--d, 0) * 90ms);
+    transition: opacity 0.7s var(--ease) var(--rv), translate 0.9s var(--ease) var(--rv), transform 0.6s var(--ease);
+  }
+  .wo-band .wo-label {
+    --d: 1;
+  }
+  .wo-band h3 {
+    font-size: clamp(2rem, 1rem + 4.4vw, 5rem);
+    font-weight: 800;
+    line-height: 0.98;
+    letter-spacing: -0.032em;
+    text-wrap: balance;
+  }
+  .wo-band.on-b {
+    color: var(--paper);
+  }
+  .wo-also {
+    margin-top: clamp(4rem, 9vw, 7.5rem);
+    padding-top: clamp(1.25rem, 2.5vw, 2rem);
+    border-top: 0.42rem solid var(--key);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 1.25rem clamp(1.5rem, 4vw, 4rem);
+  }
+  .wo-also h3 {
+    font-size: clamp(1.9rem, 1rem + 2.6vw, 3.4rem);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.035em;
+  }
+  .wo-also li {
+    display: grid;
+    gap: 0.4rem;
+    padding-bottom: 1rem;
+    border-bottom: 1.5px solid var(--key);
+  }
+  .wo-also li + li {
+    padding-top: 1rem;
+  }
+  .wo-also > * {
+    transition: opacity 0.7s var(--ease), translate 0.9s var(--ease);
+  }
+  .wo-also > ul {
+    transition-delay: 0.12s;
+  }
+  .wo-also-t {
+    transition: transform 0.6s var(--ease);
+    font-size: clamp(1.25rem, 1rem + 0.8vw, 1.6rem);
+    font-weight: 700;
+    line-height: 1.18;
+    letter-spacing: -0.012em;
+  }
+
+  /* ---- talk: a blue flood, the heading knocked out of it, and a coupon to clip ---- */
+  .wo-talk .wo-sheet-in {
+    padding-block: clamp(4.5rem, 10vw, 9rem) clamp(3.5rem, 8vw, 7rem);
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: end;
+  }
+  .wo-talk-h {
+    container-type: inline-size;
+  }
+  .wo-talk-h .wo-fit + .wo-fit {
+    margin-top: calc(100cqi * 0.03);
+  }
+  .wo-talk ::selection {
+    background: var(--paper);
+    color: var(--b);
+  }
+  .wo-coupon {
+    position: relative;
     isolation: isolate;
-    background: oklch(0.36 0.24 265);
+    padding: clamp(2rem, 4vw, 3.25rem);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem 2rem;
   }
-  .wo-panel:nth-child(even) {
-    background: var(--ink);
-  }
-  .wo-panel-art {
+  .wo-coupon-paper {
     position: absolute;
     inset: 0;
     z-index: -1;
-    opacity: 0.3;
   }
-  .wo-panel-big {
-    margin: 0;
-    font-size: clamp(3rem, 8vw, 6rem);
-    font-weight: 900;
-    font-stretch: 125%;
-    line-height: 0.9;
-    letter-spacing: -0.02em;
-    color: transparent;
-    -webkit-text-stroke: 2px var(--white);
-  }
-  .wo-panel h3 {
-    font-size: clamp(1.5rem, 2.6vw, 2.2rem);
-    line-height: 1;
-    margin-bottom: 0.6rem;
-  }
-  .wo-panel p:last-child,
-  .wo-panel div p {
-    margin: 0;
-    font-size: 1.1rem;
-    color: oklch(0.9 0.03 270);
-  }
-
-  /* ---- work ---- */
-  .wo-work {
-    background: var(--ink);
-    padding: clamp(5rem, 10vw, 8rem) 0;
-  }
-  .wo-rows {
-    list-style: none;
-    margin: 0;
-    padding: 0 clamp(1.25rem, 4vw, 3rem);
-  }
-  .wo-row {
-    position: relative;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 2rem;
-    padding: clamp(1.25rem, 2.5vw, 2rem) 0;
-    border-top: 1px solid oklch(0.97 0.01 270 / 0.25);
-    cursor: default;
-  }
-  .wo-row-main {
-    transition: translate 0.5s var(--ease);
-  }
-  .wo-row:last-child {
-    border-bottom: 1px solid oklch(0.97 0.01 270 / 0.25);
-  }
-  .wo-row h3 {
-    font-size: clamp(2rem, 6vw, 4.5rem);
-    font-stretch: 100%;
-    transition: font-stretch 0.6s var(--ease), color 0.3s;
-  }
-  .wo-row p {
-    margin: 0.5rem 0 0;
-    color: oklch(0.82 0.03 270);
-    font-size: 1.05rem;
-  }
-  .wo-row-year {
-    font-size: clamp(1.25rem, 2.2vw, 1.75rem) !important;
-    font-weight: 700;
-    color: var(--white) !important;
-    margin: 0 !important;
-  }
-  .wo-row:hover .wo-row-main,
-  .wo-row:focus-visible .wo-row-main {
-    translate: clamp(0.5rem, 2vw, 2rem) 0;
-  }
-  .wo-row:hover h3,
-  .wo-row:focus-visible h3 {
-    color: var(--vermilion);
-    font-stretch: 125%;
-  }
-  .wo-preview {
+  .wo-coupon::after {
+    content: '';
     position: absolute;
-    left: var(--mx, 70%);
-    top: var(--my, 50%);
-    width: clamp(9rem, 14vw, 13rem);
-    aspect-ratio: 5 / 7;
-    translate: -50% -62%;
-    rotate: 4deg;
+    inset: 0.7rem;
+    border: 2px dashed var(--key);
     pointer-events: none;
-    opacity: 0;
-    scale: 0.85;
-    z-index: 5;
-    box-shadow: 0 24px 60px -12px oklch(0 0 0 / 0.6);
-    transition: opacity 0.35s var(--ease), scale 0.5s var(--ease);
   }
-  .wo-row:hover .wo-preview,
-  .wo-row:focus-visible .wo-preview {
-    opacity: 1;
-    scale: 1;
+  .wo-scissors {
+    position: absolute;
+    top: calc(0.7rem - 0.55rem);
+    left: 2.25rem;
+    width: 1.9rem;
+    height: 1.1rem;
+    padding-inline: 0.2rem;
+    box-sizing: content-box;
+    background: var(--paper);
+    fill: none;
+    stroke: var(--key);
+    stroke-width: 1.6;
+    z-index: 1;
+    transition: left 1.6s var(--ease);
   }
-
-  /* ---- reel ---- */
-  .wo-reel {
+  /* Point at the coupon, or start filling it in, and the scissors run along the cut line. */
+  .wo-coupon:hover .wo-scissors,
+  .wo-coupon:focus-within .wo-scissors {
+    left: calc(100% - 5rem);
+  }
+  .wo-coupon > :is(label, button, p) {
+    --rv: calc(var(--d, 0) * 90ms);
+    transition: opacity 0.7s var(--ease) var(--rv), translate 0.9s var(--ease) var(--rv);
+  }
+  .wo-coupon > label:nth-of-type(2) {
+    --d: 1;
+  }
+  .wo-coupon > .wo-wide {
+    --d: 2;
+  }
+  .wo-coupon > button {
+    --d: 3;
+  }
+  .wo-coupon > p {
+    --d: 4;
+  }
+  .wo-coupon label {
     display: grid;
-    background: var(--ink);
-  }
-  .wo-plate {
-    height: min(80vh, 46rem);
-    overflow: hidden;
-  }
-  .wo-plate:nth-child(1) {
-    background: var(--blue);
-  }
-  .wo-plate:nth-child(2) {
-    background: var(--vermilion);
-    --art-1: oklch(0.14 0.03 270);
-  }
-  .wo-plate:nth-child(3) {
-    background: oklch(0.97 0.01 270);
-    --art-1: oklch(0.42 0.26 265);
-    --art-2: oklch(0.68 0.24 35);
-    --art-3: oklch(0.14 0.03 270);
-  }
-
-  /* ---- talk ---- */
-  .wo-talk {
-    background: var(--vermilion);
-    color: var(--ink);
-    padding: clamp(5rem, 10vw, 9rem) clamp(1.25rem, 4vw, 3rem);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: clamp(2rem, 6vw, 5rem);
-    align-items: end;
-  }
-  .wo-talk h2 {
-    font-size: clamp(3.4rem, 11vw, 6rem);
-    font-stretch: 110%;
-    line-height: 0.88;
-  }
-  .wo-form {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-  }
-  .wo-form label {
-    display: grid;
-    gap: 0.35rem;
-    font-weight: 700;
-    font-size: 0.95rem;
+    gap: 0.2rem;
+    font: 400 1.1875rem / 1.15 var(--goth);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
   }
   .wo-wide {
     grid-column: 1 / -1;
   }
-  .wo-form input,
-  .wo-form textarea {
-    background: transparent;
+  .wo-coupon input,
+  .wo-coupon textarea {
+    padding: 0.4rem 0 0.35rem;
     border: 0;
-    border-bottom: 2px solid var(--ink);
-    padding: 0.5rem 0;
-    font: inherit;
-    font-size: 1.2rem;
-    color: var(--ink);
+    border-bottom: 2px solid var(--key);
     border-radius: 0;
+    background: transparent;
+    color: var(--key);
+    font: 500 1.25rem / 1.35 var(--clar);
+    letter-spacing: 0;
+    text-transform: none;
+    resize: vertical;
+  }
+  .wo-coupon input:focus-visible,
+  .wo-coupon textarea:focus-visible {
+    outline: none;
+    border-bottom-color: var(--p);
+    box-shadow: 0 2px 0 var(--p);
   }
   .wo-send {
     justify-self: start;
-    padding: 1rem 1.75rem;
-    border-radius: 999px;
-    border: 0;
-    background: var(--ink);
-    color: var(--white);
-    font: 800 1.05rem 'Archivo Variable', sans-serif;
-    opacity: 0.5;
+    align-self: center;
+    background: transparent;
+    color: var(--key);
+    border-style: dashed;
     cursor: not-allowed;
   }
-  .wo-form p {
-    grid-column: 1 / -1;
-    margin: 0;
-    font-size: 0.95rem;
-  }
-  .wo-foot {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 0.5rem 2rem;
-    padding: 1.5rem clamp(1.25rem, 4vw, 3rem) 5rem;
-    background: var(--ink);
-    color: oklch(0.85 0.02 270);
-    font-size: 0.9rem;
+  .wo-coupon p {
+    align-self: center;
+    font-size: 1rem;
+    line-height: 1.4;
   }
 
-  @media (max-width: 56rem) {
-    .wo-talk {
-      grid-template-columns: 1fr;
+  /* ---- colophon ---- */
+  .wo-colophon {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem clamp(1.25rem, 3vw, 2.5rem);
+    padding: clamp(1.5rem, 3vw, 2.25rem) var(--pad) 5.5rem;
+    background: var(--key);
+    color: var(--paper);
+    font-size: 1rem;
+  }
+  .wo-colophon .wo-swatches {
+    gap: 0;
+  }
+  .wo-colophon .wo-swatches i {
+    background: var(--c);
+    transition: scale 0.4s var(--ease);
+  }
+  .wo-colophon .wo-swatches i:hover {
+    scale: 1.7;
+  }
+  .wo-colophon .wo-swatches i:last-child {
+    box-shadow: inset 0 0 0 1px var(--paper);
+  }
+  .wo-colophon p:first-of-type {
+    font-weight: 700;
+  }
+  .wo-colophon p:last-child {
+    margin-left: auto;
+  }
+  .wo-colophon ::selection {
+    background: var(--paper);
+    color: var(--key);
+  }
+
+  /* ---- live: the press is running and motion is welcome ---- */
+  .wo.is-live .wo-stage {
+    /* 100svh of scroll pushes into the ink; the About sheet rides in over the last 60. */
+    height: 260svh;
+  }
+  .wo.is-live .wo-pin {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: clip;
+  }
+  .wo.is-live .wo-hero {
+    height: 100svh;
+    min-height: 0;
+  }
+  .wo.is-live .wo-hero-body {
+    will-change: transform, opacity;
+  }
+  .wo.is-live .wo-about {
+    z-index: 1;
+    margin-top: -60svh;
+    background: none;
+  }
+  .wo.is-live .wo-about .wo-ink {
+    /* Fade the sheet's top edge so it joins the flood it slides over without a seam. */
+    mask-image: linear-gradient(to bottom, transparent, #000 22svh);
+  }
+  /* Until the scroll reaches them, the words are a blind impression: pressed in, not yet inked. */
+  .wo-w {
+    transition: color 0.4s, text-shadow 0.4s, background-color 1.3s 0.1s;
+  }
+
+  /* Reveals: until its turn comes, a block waits just off its mark. */
+  .wo-entry > * {
+    --rv: calc(var(--d, 0) * 90ms + 0.15s);
+    transition: opacity 0.7s var(--ease) var(--rv), translate 0.9s var(--ease) var(--rv);
+  }
+  .wo-entry > :nth-child(2) {
+    --d: 1;
+  }
+  .wo-entry > :nth-child(3) {
+    --d: 2;
+  }
+  .wo.is-live .wo-years li:not(.is-in)::before,
+  .wo.is-live .wo-years li:not(.is-in)::after {
+    transform: scaleX(0);
+  }
+  .wo.is-live .wo-years li:not(.is-in) .wo-entry > *,
+  .wo.is-live .wo-also:not(.is-in) > *,
+  .wo.is-live .wo-coupon:not(.is-in) > :is(label, button, p) {
+    opacity: 0;
+    translate: 0 1.4rem;
+  }
+  .wo.is-live .wo-band:not(.is-in) > :is(h3, .wo-label) {
+    opacity: 0;
+    translate: -2rem 0;
+  }
+  .wo.is-live .wo-h2:not(.is-in) {
+    clip-path: inset(-0.15em -0.1em 100%);
+    translate: 0 0.4em;
+  }
+
+  /* Hover: type shifts on its line, and a highlighter follows the pointer through the statement. */
+  @media (hover: hover) {
+    .wo-years li:hover .wo-entry {
+      transform: translateX(0.9rem);
     }
-    .wo-form {
-      grid-template-columns: 1fr;
+    .wo-band:hover h3 {
+      transform: translateX(1.4rem);
     }
-    .wo-hero-art {
-      width: 110vw;
-      right: -35vw;
-      opacity: 0.55;
+    .wo-band:hover .wo-label {
+      transform: translateX(-0.6rem);
     }
-    .wo-top nav a:nth-child(-n + 2) {
+    .wo-also li:hover .wo-also-t {
+      transform: translateX(0.7rem);
+    }
+    .wo:not(.is-live) .wo-w:hover,
+    .wo-w.is-inked:hover {
+      background-color: var(--y);
+      transition-duration: 0.4s, 0.4s, 0s;
+      transition-delay: 0s;
+    }
+  }
+  .wo.is-live .wo-w:not(.is-inked) {
+    color: transparent;
+    text-shadow: 0 0 0 rgb(125 0 52 / 0.2), 0 1.5px 0 rgb(255 255 255 / 0.42);
+  }
+
+  @media (max-width: 47.99rem) {
+    .wo-nav {
+      font-size: 1rem;
+    }
+    .wo-nav ul {
+      gap: 0.2rem;
+    }
+    .wo-nav a {
+      padding-inline: 0.5em;
+    }
+    .wo-nav-home {
+      display: none !important;
+    }
+    .wo-top {
+      /* Clear of the nav tickets, which take the whole top edge at this width. */
+      margin-top: 2.75rem;
+    }
+    .wo-poster {
+      margin-block: clamp(0.25rem, 3svh, 2rem) auto;
+    }
+    .wo-cue span {
       display: none;
     }
-    .wo-row {
-      flex-wrap: wrap;
+    .wo-actions .wo-btn {
+      flex: 1 1 auto;
+      justify-content: center;
     }
-    .wo-preview {
-      display: none;
+    .wo-talk .wo-sheet-in {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .wo-statement {
+      margin-left: 0;
+    }
+    .wo-years li {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 1.1rem;
+    }
+    .wo-band {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .wo-also,
+    .wo-coupon {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .wo-colophon p:last-child {
+      margin-left: 0;
     }
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    .wo-ribbon-track {
-      animation: wo-run 28s linear infinite;
+    .wo-cue svg {
+      animation: wo-cue 2.4s var(--ease) infinite;
     }
-    .wo-scroll span {
-      animation: wo-line 2.2s var(--ease) infinite;
-    }
-    @keyframes wo-run {
-      to {
-        transform: translateX(-50%);
-      }
-    }
-    @keyframes wo-line {
-      0% {
-        transform: scaleX(0);
-      }
-      60% {
-        transform: scaleX(1);
-      }
+    @keyframes wo-cue {
+      0%,
       100% {
-        transform: scaleX(1);
-        opacity: 0;
+        translate: 0 -3px;
+      }
+      50% {
+        translate: 0 3px;
       }
     }
   }

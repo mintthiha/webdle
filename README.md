@@ -108,7 +108,8 @@ webdle/
 │   ├── templates/               # one full design per direction
 │   │   ├── Prestige.astro  Warmth.astro  Wow.astro  Calm.astro
 │   │   └── index.ts             # direction -> template map
-│   ├── scripts/wow.ts           # GSAP + ScrollTrigger + Lenis (Wow only)
+│   ├── scripts/wow.ts           # Wow only: poster fitting, scroll (GSAP ScrollTrigger + Lenis)
+│   ├── scripts/wow-press.ts     # Wow only: WebGL2 ink renderer (three plates, overprint, grain)
 │   └── pages/
 │       ├── index.astro          # webdle landing page / demo showcase
 │       └── [direction]/[client].astro
@@ -173,7 +174,7 @@ Four full designs, one per feeling a prospect should have. All render the same c
 |---|---|---|---|
 | Prestige | Credibility, gravitas | Oxblood, arched plates, engraved rosettes, Bodoni Moda | Scroll-linked parallax, drawn rules (CSS scroll timelines) |
 | Warmth | Warmth, personality | Sunny yellow, paper-cut collage, rounded sticker UI, Bricolage Grotesque | Floating blob, marquee, rotating badge, soft reveals |
-| Wow | Cutting-edge, bold | Ultramarine and vermilion, halftone and flow-field art, Archivo width axis | GSAP: stretching name, word-by-word statement, pinned horizontal record, hover previews |
+| Wow | Cutting-edge, bold | Wood-type broadside in three transparent inks (yellow, pink, blue) that overprint; Besley and League Gothic fitted to the measure | WebGL2 press: ink rolls on as you scroll, plates slip out of register with pointer and scroll speed, scroll pushes into the pink to reach the bio, the pointer pulls the inks apart where it hovers, rules and type arrive with the ink, a tape of course or publication titles runs sideways on scroll, "Print it again" re-deals the inks |
 | Calm | Calm, focused | Cool off-white, horizon scenes, Spectral | Slow fades, reading-progress hairline |
 
 Imagery is generated vector art (`src/lib/art.ts`), so there are no stock-photo licences or real
@@ -197,7 +198,7 @@ JavaScript off and with reduced motion on all 8 pages).
 | Script runner | `tsx` | not installed | [TODO] add when `scripts/*.ts` exist |
 | Animation | `gsap` (ScrollTrigger) | `^3.15.0` | Wow direction only. **[CHECK]** confirm GSAP's current licence terms before commercial use |
 | Smooth scroll | `lenis` | `^1.3.26` | Wow direction only |
-| Fonts | `@fontsource*` | `^5.3.0` | Self-hosted: Bodoni Moda, Hanken Grotesk, Bricolage Grotesque, Literata, Archivo, Spectral, Public Sans |
+| Fonts | `@fontsource*` | `^5.3.0` | Self-hosted: Bodoni Moda, Hanken Grotesk, Bricolage Grotesque, Literata, Besley, League Gothic, Spectral, Public Sans |
 | TypeScript | `typescript` | `^5.6.0` | **[CHECK]** verify |
 
 ### Why Astro

@@ -289,48 +289,26 @@ export function collage(opts: { seed: string; w?: number; h?: number }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Flow field and halftone (high energy)                               */
+/* Overprint: wood type in three transparent inks                      */
 /* ------------------------------------------------------------------ */
 
-export function flow(opts: { seed: string; w?: number; h?: number; step?: number }) {
-  const W = opts.w ?? 1200;
-  const H = opts.h ?? 800;
-  const step = opts.step ?? 30;
-  const n = noise2(hashString(opts.seed));
+/**
+ * A few fat letters, each printed in its own ink and lapped over its neighbour so the overlaps
+ * mix. `advance` is each letter's width in ems, since SVG cannot measure the face for us.
+ */
+export function overprint(opts: { letters: { ch: string; advance: number }[]; w?: number; h?: number }) {
+  const W = opts.w ?? 900;
+  const H = opts.h ?? 600;
+  const lap = 0.1;
+  const span = opts.letters.reduce((sum, l) => sum + l.advance - lap, lap);
+  const size = Math.min((W * 0.86) / span, H * 1.05);
+  let x = (W - span * size) / 2;
   let out = '';
-  for (let y = step / 2; y < H; y += step) {
-    for (let x = step / 2; x < W; x += step) {
-      const v = n(x * 0.0035, y * 0.0035);
-      const a = v * Math.PI * 4;
-      const len = step * (0.35 + n(x * 0.01 + 40, y * 0.01) * 0.6);
-      const dx = Math.cos(a) * len;
-      const dy = Math.sin(a) * len;
-      const c = v < 0.38 ? '--art-1' : v < 0.62 ? '--art-2' : '--art-3';
-      out += `<line x1="${f(x - dx / 2)}" y1="${f(y - dy / 2)}" x2="${f(x + dx / 2)}" y2="${f(y + dy / 2)}" style="stroke:var(${c})"/>`;
-    }
-  }
-  return svg(W, H, `<g stroke-width="${f(step * 0.16)}" stroke-linecap="round">${out}</g>`);
-}
-
-export function halftone(opts: { seed: string; w?: number; h?: number; step?: number }) {
-  const W = opts.w ?? 1000;
-  const H = opts.h ?? 1000;
-  const step = opts.step ?? 26;
-  const r = rng(opts.seed);
-  const n = noise2(hashString(opts.seed));
-  const cx = W * (0.35 + r() * 0.3);
-  const cy = H * (0.35 + r() * 0.3);
-  const maxd = Math.hypot(W, H) * 0.55;
-  let out = '';
-  for (let y = step / 2; y < H; y += step) {
-    for (let x = step / 2; x < W; x += step) {
-      const d = Math.hypot(x - cx, y - cy) / maxd;
-      const v = Math.max(0, 1 - d) * (0.7 + n(x * 0.01, y * 0.01) * 0.6);
-      const rad = (step / 2) * Math.min(1, v * 1.15);
-      if (rad > 0.8) out += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(rad)}"/>`;
-    }
-  }
-  return svg(W, H, `<g style="fill:var(--art-1)">${out}</g>`);
+  opts.letters.forEach((l, i) => {
+    out += `<text x="${f(x)}" y="${f(H / 2 + size * 0.3)}" style="fill:var(--art-${(i % 3) + 1});mix-blend-mode:multiply">${esc(l.ch)}</text>`;
+    x += (l.advance - lap) * size;
+  });
+  return svg(W, H, `<g font-size="${f(size)}" style="font-family:var(--cv-font,serif);font-weight:900">${out}</g>`);
 }
 
 /* ------------------------------------------------------------------ */

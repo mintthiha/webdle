@@ -18,7 +18,7 @@ export const directions = [
     slug: 'wow',
     name: 'Wow',
     feeling: 'Cutting-edge and bold',
-    blurb: 'Ultramarine, kinetic type and pinned scroll sequences. The one people screenshot.',
+    blurb: 'A wood-type poster in three inks that prints itself as you scroll. The one people screenshot.',
   },
   {
     slug: 'calm',

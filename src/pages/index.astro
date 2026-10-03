@@ -3,17 +3,24 @@ import '@fontsource/spectral/300.css';
 import '@fontsource/spectral/300-italic.css';
 import '@fontsource/spectral/400.css';
 import '@fontsource-variable/public-sans/wght.css';
+import '@fontsource-variable/besley/wght.css';
 import '../styles/global.css';
 import { getClients } from '../lib/clients';
 import { directions } from '../lib/view';
-import { landscape, collage, halftone, horizon } from '../lib/art';
+import { landscape, collage, overprint, horizon } from '../lib/art';
 
 const clients = getClients();
 
 const art = {
   prestige: landscape({ seed: 'landing-pr', motif: 'teacher', layers: 8, w: 900, h: 600, sunSize: 0.1 }),
   warmth: collage({ seed: 'landing-wm', w: 900, h: 600 }),
-  wow: halftone({ seed: 'landing-wo', w: 900, h: 600, step: 22 }),
+  wow: overprint({
+    letters: [
+      { ch: 'W', advance: 1.02 },
+      { ch: 'o', advance: 0.62 },
+      { ch: 'w', advance: 0.88 },
+    ],
+  }),
   calm: horizon({ seed: 'landing-ca', motif: 'writer', w: 900, h: 600 }),
 };
 const label = { teacher: 'teacher', writer: 'writer' } as const;
@@ -295,8 +302,11 @@ const services = [
     --art-5: oklch(0.99 0.005 95);
   }
   .lp-tile-wow .lp-art {
-    background: oklch(0.42 0.26 265);
-    --art-1: oklch(0.68 0.24 35);
+    background: #f4f4f0;
+    --art-1: #1a5cf0;
+    --art-2: #ff4577;
+    --art-3: #ffd21f;
+    --cv-font: 'Besley Variable', Georgia, serif;
   }
   .lp-tile-calm {
     --art-1: oklch(0.965 0.014 250);
