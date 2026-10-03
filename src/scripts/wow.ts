@@ -159,6 +159,75 @@ function navState(root: HTMLElement) {
   });
 }
 
+/**
+ * Everything that moves without the press: smooth scrolling, travelling to anchors, the statement
+ * taking ink word by word, blocks arriving as they come into view, and the tape. It runs whether
+ * or not WebGL is available, so the flat-ink fallback is still a moving page.
+ */
+function startMotion(root: HTMLElement, beforeTravel?: () => void) {
+  const lenis = new Lenis({ lerp: 0.1 });
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add((t) => lenis.raf(t * 1000));
+  gsap.ticker.lagSmoothing(0);
+  root.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      const target = document.querySelector<HTMLElement>(a.hash);
+      if (!target) return;
+      e.preventDefault();
+      beforeTravel?.();
+      // Travel there: ease away, cross the page, ease in. Longer trips take a little longer.
+      const to = a.hash === '#top' ? 0 : target.getBoundingClientRect().top + window.scrollY;
+      const trip = Math.abs(to - window.scrollY);
+      lenis.scrollTo(to, {
+        duration: clamp(trip / 2400, 1.2, 2.6),
+        easing: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
+      });
+      target.tabIndex = -1;
+      target.focus({ preventScroll: true });
+    });
+  });
+
+  // The statement starts as a blind impression and takes ink word by word.
+  const words = [...root.querySelectorAll<HTMLElement>('.wo-w')];
+  let inked = 0;
+  const ink = (n: number) => {
+    for (let i = Math.min(n, inked); i < Math.max(n, inked); i++) words[i].classList.toggle('is-inked', i < n);
+    inked = n;
+  };
+  ScrollTrigger.create({
+    trigger: '.wo-statement',
+    start: 'top 85%',
+    end: 'center 52%',
+    scrub: true,
+    onUpdate: (st) => ink(Math.round(st.progress * words.length)),
+    onRefresh: (st) => ink(Math.round(st.progress * words.length)),
+  });
+
+  // Type, rules and form fields arrive a block at a time. With flat inks, so does the big type.
+  const arrive = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting && entry.boundingClientRect.top > 0) continue;
+        entry.target.classList.add('is-in');
+        arrive.unobserve(entry.target);
+      }
+    },
+    { rootMargin: '0px 0px -14% 0px' },
+  );
+  const flat = root.classList.contains('is-flat') ? ', .wo-fit, .wo-num, .wo-band-ink' : '';
+  root.querySelectorAll(`[data-rv]${flat}`).forEach((el) => arrive.observe(el));
+
+  // The tape between sheets runs sideways as the page moves down.
+  const run = root.querySelector<HTMLElement>('.wo-tape-run');
+  if (run) {
+    gsap.to(run, {
+      xPercent: -25,
+      ease: 'none',
+      scrollTrigger: { trigger: '.wo-tape', start: 'top bottom', end: 'bottom top', scrub: 0.6 },
+    });
+  }
+}
+
 async function init(root: HTMLElement) {
   const html = document.documentElement;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -172,9 +241,13 @@ async function init(root: HTMLElement) {
     new Promise((done) => setTimeout(done, 3000)),
   ]);
 
+  // is-motion: the visitor has not asked for reduced motion. is-live: motion, and the press runs.
   const press = Press.create(root);
-  const live = !!press && !reduce;
+  const motion = !reduce;
+  const live = !!press && motion;
+  root.classList.toggle('is-motion', motion);
   root.classList.toggle('is-live', live);
+  root.classList.toggle('is-flat', !press);
 
   fitLines(root);
   const layoutHero = heroLayout(root);
@@ -187,7 +260,9 @@ async function init(root: HTMLElement) {
     // No WebGL2: hand the page back to its flat CSS inks.
     html.classList.remove('wo-js');
     pull?.addEventListener('click', () => shuffleInks(root));
+    if (motion) startMotion(root);
     navState(root);
+    ScrollTrigger.refresh();
     return;
   }
 
@@ -299,29 +374,8 @@ async function init(root: HTMLElement) {
 
   /* ---- scroll ---- */
   if (live) {
-    const lenis = new Lenis({ lerp: 0.1 });
-    lenis.on('scroll', ScrollTrigger.update);
-    gsap.ticker.add((t) => lenis.raf(t * 1000));
-    gsap.ticker.lagSmoothing(0);
-    root.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((a) => {
-      a.addEventListener('click', (e) => {
-        const target = document.querySelector<HTMLElement>(a.hash);
-        if (!target) return;
-        e.preventDefault();
-        // Cut every sheet on the way first, so the journey is not interrupted by a slow frame.
-        sheets.forEach((s) => ready.has(s) || cut(s));
-        // Travel there: ease away, cross the page, ease in. Longer trips take a little longer.
-        const to = a.hash === '#top' ? 0 : target.getBoundingClientRect().top + window.scrollY;
-        const trip = Math.abs(to - window.scrollY);
-        lenis.scrollTo(to, {
-          duration: clamp(trip / 2400, 1.2, 2.6),
-          easing: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
-        });
-        target.tabIndex = -1;
-        target.focus({ preventScroll: true });
-      });
-    });
-
+    // Cut every sheet on the way before travelling to an anchor, so no slow frame interrupts it.
+    startMotion(root, () => sheets.forEach((s) => ready.has(s) || cut(s)));
     ScrollTrigger.create({
       trigger: '.wo-stage',
       start: 'top top',
@@ -330,45 +384,6 @@ async function init(root: HTMLElement) {
       onUpdate: (st) => applyStage(st.progress),
       onRefresh: (st) => applyStage(st.progress),
     });
-
-    // The statement starts as a blind impression and takes ink word by word.
-    const words = [...root.querySelectorAll<HTMLElement>('.wo-w')];
-    let inked = 0;
-    const ink = (n: number) => {
-      for (let i = Math.min(n, inked); i < Math.max(n, inked); i++) words[i].classList.toggle('is-inked', i < n);
-      inked = n;
-    };
-    ScrollTrigger.create({
-      trigger: '.wo-statement',
-      start: 'top 85%',
-      end: 'center 52%',
-      scrub: true,
-      onUpdate: (st) => ink(Math.round(st.progress * words.length)),
-      onRefresh: (st) => ink(Math.round(st.progress * words.length)),
-    });
-
-    // Type, rules and form fields arrive with the ink, a block at a time.
-    const arrive = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting && entry.boundingClientRect.top > 0) continue;
-          entry.target.classList.add('is-in');
-          arrive.unobserve(entry.target);
-        }
-      },
-      { rootMargin: '0px 0px -14% 0px' },
-    );
-    root.querySelectorAll('[data-rv]').forEach((el) => arrive.observe(el));
-
-    // The tape between sheets runs sideways as the page moves down.
-    const run = root.querySelector<HTMLElement>('.wo-tape-run');
-    if (run) {
-      gsap.to(run, {
-        xPercent: -25,
-        ease: 'none',
-        scrollTrigger: { trigger: '.wo-tape', start: 'top bottom', end: 'bottom top', scrub: 0.6 },
-      });
-    }
   }
   navState(root);
 

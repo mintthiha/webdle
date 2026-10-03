@@ -378,7 +378,9 @@ const SWATCHES = ['y', 'p', 'b', 'yp', 'yb', 'pb', 'ypb'];
   .wo [data-rect][data-ink] {
     background: var(--c);
   }
-  .wo [data-knock] {
+  .wo [data-knock],
+  .wo .wo-flood {
+    /* A flood sits on its section's own colour; multiplying the two would darken it. */
     mix-blend-mode: normal;
   }
   .wo-coupon-paper {
@@ -1087,23 +1089,32 @@ const SWATCHES = ['y', 'p', 'b', 'yp', 'yb', 'pb', 'ypb'];
   .wo-entry > :nth-child(3) {
     --d: 2;
   }
-  .wo.is-live .wo-years li:not(.is-in)::before,
-  .wo.is-live .wo-years li:not(.is-in)::after {
+  .wo.is-motion .wo-years li:not(.is-in)::before,
+  .wo.is-motion .wo-years li:not(.is-in)::after {
     transform: scaleX(0);
   }
-  .wo.is-live .wo-years li:not(.is-in) .wo-entry > *,
-  .wo.is-live .wo-also:not(.is-in) > *,
-  .wo.is-live .wo-coupon:not(.is-in) > :is(label, button, p) {
+  .wo.is-motion .wo-years li:not(.is-in) .wo-entry > *,
+  .wo.is-motion .wo-also:not(.is-in) > *,
+  .wo.is-motion .wo-coupon:not(.is-in) > :is(label, button, p) {
     opacity: 0;
     translate: 0 1.4rem;
   }
-  .wo.is-live .wo-band:not(.is-in) > :is(h3, .wo-label) {
+  .wo.is-motion .wo-band:not(.is-in) > :is(h3, .wo-label) {
     opacity: 0;
     translate: -2rem 0;
   }
-  .wo.is-live .wo-h2:not(.is-in) {
+  .wo.is-motion .wo-h2:not(.is-in) {
     clip-path: inset(-0.15em -0.1em 100%);
     translate: 0 0.4em;
+  }
+
+  /* Flat inks (no WebGL): the big type and the bands wipe on in place of the rollers. */
+  .wo.is-flat.is-motion :is(.wo-fit, .wo-num, .wo-band-ink) {
+    clip-path: inset(-25% -5%);
+    transition: clip-path 1.2s var(--ease);
+  }
+  .wo.is-flat.is-motion :is(.wo-fit, .wo-num, .wo-band-ink):not(.is-in) {
+    clip-path: inset(-25% -5% 125%);
   }
 
   /* Hover: type shifts on its line, and a highlighter follows the pointer through the statement. */
@@ -1120,14 +1131,14 @@ const SWATCHES = ['y', 'p', 'b', 'yp', 'yb', 'pb', 'ypb'];
     .wo-also li:hover .wo-also-t {
       transform: translateX(0.7rem);
     }
-    .wo:not(.is-live) .wo-w:hover,
+    .wo:not(.is-motion) .wo-w:hover,
     .wo-w.is-inked:hover {
       background-color: var(--y);
       transition-duration: 0.4s, 0.4s, 0s;
       transition-delay: 0s;
     }
   }
-  .wo.is-live .wo-w:not(.is-inked) {
+  .wo.is-motion .wo-w:not(.is-inked) {
     color: transparent;
     text-shadow: 0 0 0 rgb(125 0 52 / 0.2), 0 1.5px 0 rgb(255 255 255 / 0.42);
   }

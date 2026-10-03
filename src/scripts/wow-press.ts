@@ -168,10 +168,14 @@ export class Press {
   static create(root: HTMLElement): Press | null {
     const glc = document.createElement('canvas');
     const gl = glc.getContext('webgl2', { alpha: false, antialias: false, depth: false, stencil: false });
-    if (!gl) return null;
+    if (!gl) {
+      console.warn('[wow] WebGL2 is unavailable; showing flat inks.');
+      return null;
+    }
     try {
       return new Press(root, glc, gl);
-    } catch {
+    } catch (error) {
+      console.warn('[wow] the press failed to start; showing flat inks.', error);
       return null;
     }
   }
