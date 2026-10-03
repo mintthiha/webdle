@@ -1,0 +1,48 @@
+---
+import ClientLayout from '../../layouts/ClientLayout.astro';
+import Section from '../../components/Section.astro';
+import Entry from '../../components/Entry.astro';
+import { getClients } from '../../lib/clients';
+import type { Client } from '../../schemas/client';
+
+export function getStaticPaths() {
+  return getClients().map((client) => ({ params: { client: client.slug }, props: { client } }));
+}
+
+const { client } = Astro.props as { client: Client };
+const period = (start: number, end: number | null) => `${start}–${end ?? 'Present'}`;
+---
+
+<ClientLayout client={client} title="About" current="about">
+  <div class="mx-auto max-w-5xl px-6 pt-16">
+    <h1 class="font-display text-4xl sm:text-5xl tracking-tight mb-10">About</h1>
+
+    <Section title="Biography">
+      <div class="prose-bio"><p>{client.bio}</p></div>
+    </Section>
+
+    {client.credentials.length > 0 && (
+      <Section title="Education">
+        {client.credentials.map((c) => (
+          <Entry
+            period={String(c.year)}
+            title={c.degree}
+            subtitle={[c.institution, c.location].filter(Boolean).join(', ')}
+          />
+        ))}
+      </Section>
+    )}
+
+    {client.teaching.length > 0 && (
+      <Section title="Teaching experience">
+        {client.teaching.map((t) => (
+          <Entry
+            period={period(t.startYear, t.endYear)}
+            title={t.role}
+            subtitle={[t.institution, t.department].filter(Boolean).join(' · ')}
+          />
+        ))}
+      </Section>
+    )}
+  </div>
+</ClientLayout>

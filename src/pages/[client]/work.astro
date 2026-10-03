@@ -1,0 +1,60 @@
+---
+import ClientLayout from '../../layouts/ClientLayout.astro';
+import Section from '../../components/Section.astro';
+import Entry from '../../components/Entry.astro';
+import { getClients } from '../../lib/clients';
+import type { Client } from '../../schemas/client';
+
+export function getStaticPaths() {
+  return getClients().map((client) => ({ params: { client: client.slug }, props: { client } }));
+}
+
+const { client } = Astro.props as { client: Client };
+const period = (start: number, end: number | null) => `${start}–${end ?? 'Present'}`;
+const publications = [...client.publications].sort((a, b) => b.year - a.year);
+const typeLabel = { book: 'Book', article: 'Article', essay: 'Essay', story: 'Story', chapter: 'Chapter' };
+const heading = client.archetype === 'teacher' ? 'Teaching' : 'Writing';
+---
+
+<ClientLayout client={client} title={heading} current="work">
+  <div class="mx-auto max-w-5xl px-6 pt-16">
+    <h1 class="font-display text-4xl sm:text-5xl tracking-tight mb-10">{heading}</h1>
+
+    {client.archetype === 'teacher' && (
+      <Section title="Roles and courses">
+        {client.teaching.map((t) => (
+          <Entry
+            period={period(t.startYear, t.endYear)}
+            title={t.role}
+            subtitle={[t.institution, t.department].filter(Boolean).join(' · ')}
+          >
+            {t.courses.length > 0 && (
+              <ul class="mt-2 flex flex-wrap gap-2">
+                {t.courses.map((course) => (
+                  <li class="text-sm bg-accent-soft text-accent px-3 py-1 rounded-full">{course}</li>
+                ))}
+              </ul>
+            )}
+          </Entry>
+        ))}
+      </Section>
+    )}
+
+    {publications.length > 0 && (
+      <Section title={client.archetype === 'teacher' ? 'Publications' : 'Books, essays and stories'}>
+        {publications.map((p) => (
+          <Entry period={String(p.year)} title={p.title} subtitle={p.venue}>
+            <p class="mt-1 text-xs uppercase tracking-wider text-accent font-semibold">
+              {typeLabel[p.type]}
+            </p>
+            {p.url && (
+              <a href={p.url} class="text-sm underline underline-offset-4 text-accent">
+                Read →
+              </a>
+            )}
+          </Entry>
+        ))}
+      </Section>
+    )}
+  </div>
+</ClientLayout>

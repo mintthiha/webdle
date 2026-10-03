@@ -1,0 +1,89 @@
+---
+import '../styles/global.css';
+import { getClients } from '../lib/clients';
+
+const clients = getClients();
+const services = [
+  { title: 'Strategy', body: 'Clarify how you want to be known, who you are speaking to, and what you want the site to do.' },
+  { title: 'Design and copy', body: 'A site written and designed for your profession, built from facts you provide and approve.' },
+  { title: 'Name-search setup', body: 'Clean structure, fast pages and the technical groundwork that helps search engines understand who you are.' },
+  { title: 'Ongoing care', body: 'Content updates, maintenance and monitoring of how you appear online.' },
+];
+const label = { teacher: 'For teachers', writer: 'For writers' };
+---
+
+<!doctype html>
+<html lang="en" data-theme="webdle">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>webdle · Personal websites for teachers and writers</title>
+    <meta
+      name="description"
+      content="webdle builds personal websites for teachers and writers, so the first thing people find when they search your name is you."
+    />
+  </head>
+  <body class="bg-paper text-ink">
+    <header class="mx-auto max-w-5xl px-6 py-6 flex items-center justify-between">
+      <span class="font-display text-2xl tracking-tight">webdle</span>
+      <a href="#demos" class="text-sm font-medium text-accent underline underline-offset-4">See the demos</a>
+    </header>
+
+    <main>
+      <section class="mx-auto max-w-5xl px-6 pt-16 pb-20">
+        <h1 class="font-display text-5xl sm:text-6xl leading-[1.05] tracking-tight max-w-3xl">
+          When people search your name, they should find <em class="text-accent">you</em>.
+        </h1>
+        <p class="mt-6 text-xl text-muted max-w-2xl leading-relaxed">
+          webdle builds personal websites for teachers and writers: a professional home on the web
+          that you control, instead of a scatter of profiles and staff pages.
+        </p>
+      </section>
+
+      <section id="demos" class="mx-auto max-w-5xl px-6 pb-20">
+        <h2 class="font-display text-3xl mb-2">Two sample sites</h2>
+        <p class="text-muted mb-8">Fictional people and content, built the way a real client site would be.</p>
+        <div class="grid gap-6 sm:grid-cols-2">
+          {clients.map((c) => (
+            <a
+              href={`/${c.slug}/`}
+              class="group block bg-card border border-line rounded-lg p-8 hover:border-accent"
+            >
+              <p class="text-xs uppercase tracking-[0.2em] text-accent font-semibold mb-3">
+                {label[c.archetype]}
+              </p>
+              <p class="font-display text-3xl mb-2">{c.name}</p>
+              <p class="text-muted mb-6">{c.tagline}</p>
+              <span class="text-accent font-medium underline underline-offset-4 group-hover:no-underline">
+                View the site →
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="border-t border-line">
+        <div class="mx-auto max-w-5xl px-6 py-20">
+          <h2 class="font-display text-3xl mb-10">What is included</h2>
+          <div class="grid gap-x-10 gap-y-8 sm:grid-cols-2">
+            {services.map((s) => (
+              <div>
+                <h3 class="font-semibold text-lg mb-1">{s.title}</h3>
+                <p class="text-muted leading-relaxed">{s.body}</p>
+              </div>
+            ))}
+          </div>
+          <p class="mt-12 text-sm text-muted max-w-2xl">
+            Search results depend on many factors outside anyone's control, so we do not promise
+            specific rankings or timelines.
+          </p>
+          <!-- [TODO: webdle contact link or form] -->
+        </div>
+      </section>
+    </main>
+
+    <footer class="border-t border-line">
+      <div class="mx-auto max-w-5xl px-6 py-8 text-sm text-muted">© {new Date().getFullYear()} webdle</div>
+    </footer>
+  </body>
+</html>

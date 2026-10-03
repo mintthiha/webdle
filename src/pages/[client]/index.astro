@@ -1,0 +1,85 @@
+---
+import ClientLayout from '../../layouts/ClientLayout.astro';
+import { getClients } from '../../lib/clients';
+import type { Client } from '../../schemas/client';
+
+export function getStaticPaths() {
+  return getClients().map((client) => ({ params: { client: client.slug }, props: { client } }));
+}
+
+const { client } = Astro.props as { client: Client };
+const base = `/${client.slug}`;
+
+const current = client.teaching.find((t) => t.endYear === null);
+const latestPub = [...client.publications].sort((a, b) => b.year - a.year)[0];
+const firstName = client.name.split(' ')[0];
+---
+
+<ClientLayout client={client} title="Home" current="home">
+  <section class="mx-auto max-w-5xl px-6 pt-20 pb-16">
+    <p class="text-sm uppercase tracking-[0.2em] text-accent font-semibold mb-4">
+      {client.archetype === 'teacher' ? 'Educator' : 'Author'}
+    </p>
+    <h1 class="font-display text-5xl sm:text-6xl leading-[1.05] tracking-tight max-w-3xl">
+      {client.name}
+    </h1>
+    <p class="mt-6 text-xl text-muted max-w-2xl leading-relaxed">{client.tagline}</p>
+    <div class="mt-10 flex flex-wrap gap-4">
+      <a
+        href={`${base}/about/`}
+        class="bg-accent text-accent-ink px-6 py-3 rounded-md font-medium hover:opacity-90"
+      >
+        About {firstName}
+      </a>
+      <a
+        href={`${base}/contact/`}
+        class="border border-ink/30 px-6 py-3 rounded-md font-medium hover:border-accent hover:text-accent"
+      >
+        Get in touch
+      </a>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-6">
+    <div class="grid gap-6 sm:grid-cols-2">
+      {client.archetype === 'teacher' && current && (
+        <div class="bg-card border border-line rounded-lg p-6">
+          <p class="text-sm text-muted mb-1">Currently</p>
+          <p class="font-display text-xl">{current.role}</p>
+          <p class="text-muted">{current.institution}</p>
+        </div>
+      )}
+      {client.archetype === 'writer' && latestPub && (
+        <div class="bg-card border border-line rounded-lg p-6">
+          <p class="text-sm text-muted mb-1">Latest</p>
+          <p class="font-display text-xl italic">{latestPub.title}</p>
+          <p class="text-muted">{latestPub.venue}, {latestPub.year}</p>
+        </div>
+      )}
+      <div class="bg-accent-soft border border-line rounded-lg p-6">
+        <p class="text-sm text-muted mb-1">
+          {client.archetype === 'teacher' ? 'Education' : 'Background'}
+        </p>
+        {client.credentials[0] ? (
+          <>
+            <p class="font-display text-xl">{client.credentials[0].degree}</p>
+            <p class="text-muted">
+              {client.credentials[0].institution}, {client.credentials[0].year}
+            </p>
+          </>
+        ) : (
+          <p class="text-muted">See the About page.</p>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-6 pt-16">
+    <div class="prose-bio">
+      <p>{client.bio}</p>
+    </div>
+    <a href={`${base}/about/`} class="inline-block mt-4 text-accent font-medium underline underline-offset-4">
+      Read more →
+    </a>
+  </section>
+</ClientLayout>
