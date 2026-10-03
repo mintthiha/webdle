@@ -34,7 +34,7 @@ const jane: Teacher = {
       role: 'Lead English Teacher',
       institution: 'Example High School',
       department: 'English Department',
-      courses: ['AP Literature', 'Creative Writing', 'English 10'],
+      courses: ['AP Literature', 'Creative Writing', 'English 10', 'Public Speaking'],
     },
     {
       startYear: 2010,

@@ -1,0 +1,733 @@
+---
+import '@fontsource-variable/bodoni-moda/opsz.css';
+import '@fontsource-variable/hanken-grotesk/wght.css';
+import Base from '../layouts/Base.astro';
+import { landscape, rosette, cover } from '../lib/art';
+import { toView } from '../lib/view';
+import type { Client } from '../schemas/client';
+
+interface Props {
+  client: Client;
+}
+const { client } = Astro.props;
+const v = toView(client);
+const s = client.slug;
+
+const heroArt = landscape({ seed: `${s}-pr-hero`, motif: v.motif, layers: 9, sunSize: 0.09 });
+const bioArt = landscape({ seed: `${s}-pr-bio`, motif: v.motif, layers: 6, w: 600, h: 700, sunSize: 0.12 });
+const bandArt = landscape({ seed: `${s}-pr-band`, motif: v.motif, layers: 7, w: 1600, h: 700, amp: 0.8, sunSize: 0.13 });
+const seal = rosette({ seed: `${s}-pr-seal` });
+const seal2 = rosette({ seed: `${s}-pr-seal2`, rings: 28 });
+
+const shelf =
+  client.archetype === 'writer'
+    ? v.publications.map((p, i) => ({
+        art: cover({ title: p.title, sub: `${p.venue}, ${p.year}`, seed: `${s}-${p.title}`, kind: i % 4 }),
+        title: p.title,
+        meta: `${v.typeLabel[p.type]} · ${p.venue}, ${p.year}`,
+      }))
+    : v.courses.slice(0, 5).map((c, i) => ({
+        art: cover({ title: c.course, sub: c.institution, seed: `${s}-${c.course}`, kind: i % 4 }),
+        title: c.course,
+        meta: c.institution,
+      }));
+
+const coverBg = ['oklch(0.985 0.004 250)', 'oklch(0.3 0.09 22)', 'oklch(0.86 0.05 20)'];
+const coverInk = ['oklch(0.2 0.06 22)', 'oklch(0.96 0.006 22)', 'oklch(0.2 0.06 22)'];
+
+const nav = [
+  ['#biography', 'Biography'],
+  ['#record', 'Record'],
+  ['#work', v.workLabel],
+  ['#correspondence', 'Correspondence'],
+];
+---
+
+<Base client={client} direction="prestige" title={`${client.name} · ${v.role}`} themeColor="#3b0f14">
+  <div class="pr">
+    <header class="pr-top">
+      <a class="pr-brand" href="#top">{client.name}</a>
+      <nav aria-label="Main">
+        <ul>
+          {nav.map(([href, label]) => <li><a href={href}>{label}</a></li>)}
+        </ul>
+      </nav>
+    </header>
+
+    <section class="pr-hero" id="top">
+      <div class="pr-hero-copy">
+        <p class="pr-kicker">{v.role}{client.location && <> · {client.location}</>}</p>
+        <h1>
+          <span class="pr-line"><span>{v.firstName}</span></span>
+          <span class="pr-line"><em><span>{v.lastName}</span></em></span>
+        </h1>
+        <p class="pr-tagline">{client.tagline}</p>
+        <div class="pr-cta">
+          <a class="pr-btn" href="#biography">Read the biography</a>
+          <a class="pr-link" href="#correspondence">Correspondence</a>
+        </div>
+      </div>
+      <figure class="pr-hero-plate">
+        <div class="pr-arch pr-par" set:html={heroArt} />
+        <div class="pr-seal" set:html={seal} />
+      </figure>
+    </section>
+
+    <section class="pr-bio" id="biography">
+      <div class="pr-bio-side">
+        <h2>Biography</h2>
+        <div class="pr-arch pr-arch-sm pr-par" set:html={bioArt} />
+      </div>
+      <div class="pr-bio-body pr-rise">
+        <p class="pr-dropcap">{client.bio}</p>
+      </div>
+    </section>
+
+    <section class="pr-record" id="record">
+      <h2 class="pr-rise">Record</h2>
+      {v.education.length > 0 && (
+        <div class="pr-ledger">
+          <h3>Education</h3>
+          {v.education.map((c) => (
+            <div class="pr-row">
+              <p class="pr-year">{c.year}</p>
+              <p class="pr-what">{c.degree}</p>
+              <p class="pr-where">{[c.institution, c.location].filter(Boolean).join(', ')}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {v.roles.length > 0 && (
+        <div class="pr-ledger">
+          <h3>Experience</h3>
+          {v.roles.map((r) => (
+            <div class="pr-row">
+              <p class="pr-year">{v.period(r.startYear, r.endYear)}</p>
+              <p class="pr-what">{r.role}</p>
+              <p class="pr-where">{[r.institution, r.department].filter(Boolean).join(' · ')}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+
+    <section class="pr-work" id="work">
+      <div class="pr-work-head pr-rise">
+        <h2>{client.archetype === 'teacher' ? 'Courses taught' : 'Selected work'}</h2>
+        <div class="pr-seal pr-seal-sm" set:html={seal2} />
+      </div>
+      <ul class="pr-shelf">
+        {shelf.map((item, i) => (
+          <li class="pr-rise" style={`--i:${i};--cv-bg:${coverBg[i % 3]};--cv-ink:${coverInk[i % 3]}`}>
+            <figure>
+              <div class="pr-cover" set:html={item.art} />
+              <figcaption>
+                <strong>{item.title}</strong>
+                <span>{item.meta}</span>
+              </figcaption>
+            </figure>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="pr-band" aria-label={v.nowLabel}>
+      <div class="pr-band-art pr-par" set:html={bandArt} />
+      <p class="pr-band-text pr-rise"><span>{v.nowLabel}</span> {v.nowLine}</p>
+    </section>
+
+    <section class="pr-contact" id="correspondence">
+      <div class="pr-rise">
+        <h2>Correspondence</h2>
+        <p>
+          {client.archetype === 'teacher'
+            ? 'For speaking, consulting and collaboration, write here.'
+            : 'For press, events and rights enquiries, write here.'}
+        </p>
+      </div>
+      <!-- [TODO: form endpoint] No form service chosen yet; the form is inert in this demo. -->
+      <form class="pr-form pr-rise">
+        <label>Name<input type="text" name="name" autocomplete="name" /></label>
+        <label>Email<input type="email" name="email" autocomplete="email" /></label>
+        <label>Message<textarea name="message" rows="4"></textarea></label>
+        <button type="button" disabled>Send message</button>
+        <p class="pr-note">Demo only. The form is not connected on sample sites.</p>
+      </form>
+    </section>
+
+    <footer class="pr-foot">
+      <span>© {new Date().getFullYear()} {client.name}</span>
+      <span>Sample site with fictional content, a demo by webdle.</span>
+    </footer>
+  </div>
+</Base>
+
+<style is:global>
+  html[data-direction='prestige'] {
+    scroll-behavior: smooth;
+    background: oklch(0.27 0.09 22);
+  }
+
+  .pr {
+    --bg: oklch(0.27 0.09 22);
+    --bg-deep: oklch(0.2 0.07 22);
+    --paper: oklch(0.955 0.008 250);
+    --ink: oklch(0.96 0.006 22);
+    --text: oklch(0.22 0.04 22);
+    --muted: oklch(0.42 0.035 22);
+    --muted-on-dark: oklch(0.8 0.03 22);
+    --rose: oklch(0.82 0.07 20);
+    --rule: oklch(0.5 0.05 22 / 0.5);
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --art-sky: oklch(0.36 0.1 22);
+    --art-sun: oklch(0.84 0.09 190);
+    --art-far: oklch(0.5 0.11 22);
+    --art-near: oklch(0.15 0.05 22);
+    --art-1: oklch(0.45 0.12 22);
+    --art-2: oklch(0.82 0.09 190);
+    --art-3: oklch(0.62 0.12 25);
+    --art-4: oklch(0.25 0.08 22);
+    --art-5: oklch(0.88 0.04 22);
+    --cv-bg: oklch(0.955 0.008 250);
+    --cv-ink: oklch(0.2 0.06 22);
+    --cv-font: 'Bodoni Moda Variable', serif;
+    --cv-weight: 500;
+    font-family: 'Hanken Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+  }
+  .pr svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .pr a:focus-visible,
+  .pr button:focus-visible,
+  .pr input:focus-visible,
+  .pr textarea:focus-visible {
+    outline: 2px solid var(--rose);
+    outline-offset: 3px;
+  }
+  .pr h1,
+  .pr h2,
+  .pr h3 {
+    font-family: 'Bodoni Moda Variable', Didot, 'Times New Roman', serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  /* ---- top bar ---- */
+  .pr-top {
+    position: absolute;
+    inset: 0 0 auto 0;
+    z-index: 5;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    padding: 1.75rem clamp(1.25rem, 5vw, 4rem);
+  }
+  .pr-brand {
+    font-family: 'Bodoni Moda Variable', serif;
+    font-style: italic;
+    font-size: 1.35rem;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .pr-top ul {
+    display: flex;
+    gap: clamp(1rem, 3vw, 2.25rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.95rem;
+  }
+  .pr-top a {
+    color: var(--muted-on-dark);
+    text-decoration: none;
+    padding-block: 0.25rem;
+    background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+    transition: background-size 0.5s var(--ease), color 0.3s;
+  }
+  .pr-top a:hover {
+    color: var(--ink);
+    background-size: 100% 1px;
+  }
+
+  /* ---- hero ---- */
+  .pr-hero {
+    min-height: 100svh;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    align-items: center;
+    gap: clamp(2rem, 6vw, 6rem);
+    padding: 7rem clamp(1.25rem, 5vw, 4rem) 4rem;
+    max-width: 90rem;
+    margin-inline: auto;
+  }
+  .pr-kicker {
+    margin: 0 0 1.5rem;
+    color: var(--muted-on-dark);
+    font-size: 1rem;
+  }
+  .pr-hero h1 {
+    font-size: clamp(3.5rem, 10vw, 6rem);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    font-weight: 450;
+  }
+  .pr-hero h1 em {
+    color: var(--rose);
+    font-weight: 400;
+  }
+  .pr-line {
+    display: block;
+    overflow: hidden;
+    padding-bottom: 0.08em;
+  }
+  .pr-line > span,
+  .pr-line em > span {
+    display: inline-block;
+  }
+  .pr-tagline {
+    margin: 2rem 0 0;
+    max-width: 34ch;
+    font-size: clamp(1.15rem, 1.6vw, 1.4rem);
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .pr-cta {
+    margin-top: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+    flex-wrap: wrap;
+  }
+  .pr-btn {
+    background: var(--ink);
+    color: var(--bg);
+    padding: 0.9rem 1.6rem;
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 2px;
+    transition: background 0.3s, transform 0.4s var(--ease);
+  }
+  .pr-btn:hover {
+    background: var(--rose);
+    transform: translateY(-2px);
+  }
+  .pr-link {
+    color: var(--ink);
+    text-underline-offset: 6px;
+    text-decoration-thickness: 1px;
+  }
+
+  .pr-hero-plate {
+    position: relative;
+    margin: 0;
+    justify-self: center;
+    width: min(100%, 30rem);
+  }
+  .pr-arch {
+    aspect-ratio: 4 / 5;
+    border-radius: 999px 999px 0 0;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 0.6rem var(--bg),
+      0 0 0 calc(0.6rem + 1px) var(--rose);
+    background: var(--art-sky);
+  }
+  .pr-arch svg {
+    transform-origin: center;
+    transform: scale(1.12);
+  }
+  .pr-seal {
+    position: absolute;
+    left: -3.5rem;
+    bottom: 2.5rem;
+    width: 9.5rem;
+    color: var(--rose);
+    background: var(--bg);
+    border-radius: 50%;
+    padding: 0.4rem;
+  }
+  .pr-seal-sm {
+    position: static;
+    width: 6rem;
+    color: var(--bg);
+    background: none;
+    padding: 0;
+  }
+
+  /* ---- biography ---- */
+  .pr-bio {
+    background: var(--paper);
+    color: var(--text);
+    padding: clamp(5rem, 11vw, 9rem) clamp(1.25rem, 5vw, 4rem);
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(2rem, 7vw, 7rem);
+    max-width: none;
+  }
+  .pr-bio > * {
+    max-width: 44rem;
+  }
+  .pr-bio-side {
+    justify-self: end;
+    width: 100%;
+  }
+  .pr-bio h2 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    line-height: 1;
+    margin-bottom: 2.5rem;
+    color: var(--bg);
+  }
+  .pr-arch-sm {
+    box-shadow:
+      0 0 0 0.5rem var(--paper),
+      0 0 0 calc(0.5rem + 1px) var(--bg);
+    max-width: 17rem;
+    background: var(--art-sky);
+  }
+  .pr-bio-body {
+    align-self: center;
+  }
+  .pr-dropcap {
+    margin: 0;
+    font-size: clamp(1.2rem, 1.7vw, 1.4rem);
+    line-height: 1.75;
+    max-width: 38em;
+    text-wrap: pretty;
+  }
+  .pr-dropcap::first-letter {
+    font-family: 'Bodoni Moda Variable', serif;
+    float: left;
+    font-size: 5.4em;
+    line-height: 0.82;
+    padding: 0.06em 0.12em 0 0;
+    color: var(--bg);
+  }
+
+  /* ---- record ledger ---- */
+  .pr-record {
+    background: var(--bg-deep);
+    padding: clamp(5rem, 10vw, 8rem) clamp(1.25rem, 5vw, 4rem);
+  }
+  .pr-record > h2,
+  .pr-work h2,
+  .pr-contact h2 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    line-height: 1;
+  }
+  .pr-record > h2 {
+    margin-bottom: 3.5rem;
+    max-width: 90rem;
+    margin-inline: auto;
+  }
+  .pr-ledger {
+    max-width: 90rem;
+    margin: 0 auto 3.5rem;
+  }
+  .pr-ledger h3 {
+    font-style: italic;
+    font-size: 1.6rem;
+    color: var(--rose);
+    margin-bottom: 1rem;
+  }
+  .pr-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.25rem 2rem;
+    padding: 1.5rem 0;
+    align-items: baseline;
+  }
+  .pr-row::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: var(--rule);
+    transform-origin: left;
+  }
+  .pr-row p {
+    margin: 0;
+  }
+  .pr-year {
+    font-family: 'Bodoni Moda Variable', serif;
+    font-style: italic;
+    font-size: clamp(1.4rem, 2.4vw, 2rem);
+    color: var(--ink);
+  }
+  .pr-what {
+    font-weight: 600;
+    font-size: 1.15rem;
+  }
+  .pr-where {
+    color: var(--muted-on-dark);
+  }
+
+  /* ---- work shelf ---- */
+  .pr-work {
+    background: var(--paper);
+    color: var(--text);
+    padding: clamp(5rem, 10vw, 8rem) clamp(1.25rem, 5vw, 4rem);
+  }
+  .pr-work-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    max-width: 90rem;
+    margin: 0 auto 3.5rem;
+  }
+  .pr-work h2 {
+    color: var(--bg);
+  }
+  .pr-shelf {
+    list-style: none;
+    margin: 0 auto;
+    padding: 0;
+    max-width: 90rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: clamp(1.5rem, 3vw, 3rem);
+  }
+  .pr-shelf figure {
+    margin: 0;
+  }
+  .pr-cover {
+    aspect-ratio: 5 / 7;
+    box-shadow:
+      0 1px 0 oklch(0 0 0 / 0.08),
+      0 18px 40px -18px oklch(0.2 0.07 22 / 0.55);
+    transition: transform 0.6s var(--ease), box-shadow 0.6s var(--ease);
+  }
+  .pr-shelf li:hover .pr-cover {
+    transform: translateY(-8px) rotate(-0.8deg);
+    box-shadow:
+      0 1px 0 oklch(0 0 0 / 0.08),
+      0 30px 50px -20px oklch(0.2 0.07 22 / 0.6);
+  }
+  .pr-shelf figcaption {
+    margin-top: 1.1rem;
+    display: grid;
+    gap: 0.15rem;
+  }
+  .pr-shelf figcaption strong {
+    font-family: 'Bodoni Moda Variable', serif;
+    font-weight: 500;
+    font-style: italic;
+    font-size: 1.25rem;
+  }
+  .pr-shelf figcaption span {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  /* ---- band ---- */
+  .pr-band {
+    position: relative;
+    min-height: 34rem;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    padding: 6rem clamp(1.25rem, 5vw, 4rem);
+    background: var(--art-sky);
+  }
+  .pr-band-art {
+    position: absolute;
+    inset: -8% 0;
+  }
+  .pr-band-art::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(oklch(0.15 0.05 22 / 0.55), oklch(0.15 0.05 22 / 0.25));
+  }
+  .pr-band-text {
+    position: relative;
+    margin: 0;
+    max-width: 22ch;
+    text-align: center;
+    font-family: 'Bodoni Moda Variable', serif;
+    font-size: clamp(2rem, 5vw, 3.75rem);
+    line-height: 1.12;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+  .pr-band-text span {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-family: 'Hanken Grotesk Variable', sans-serif;
+    font-size: 1rem;
+    font-style: normal;
+    color: var(--rose);
+  }
+
+  /* ---- contact ---- */
+  .pr-contact {
+    padding: clamp(5rem, 10vw, 8rem) clamp(1.25rem, 5vw, 4rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: clamp(2rem, 7vw, 7rem);
+    max-width: 90rem;
+    margin-inline: auto;
+  }
+  .pr-contact p {
+    color: var(--muted-on-dark);
+    max-width: 30ch;
+    margin: 1.25rem 0 0;
+  }
+  .pr-form {
+    display: grid;
+    gap: 1.75rem;
+  }
+  .pr-form label {
+    display: grid;
+    gap: 0.4rem;
+    font-size: 0.95rem;
+    color: var(--muted-on-dark);
+  }
+  .pr-form input,
+  .pr-form textarea {
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--rule);
+    padding: 0.5rem 0;
+    color: var(--ink);
+    font: inherit;
+    font-size: 1.15rem;
+    border-radius: 0;
+  }
+  .pr-form button {
+    justify-self: start;
+    padding: 0.9rem 1.6rem;
+    border: 0;
+    font: inherit;
+    font-weight: 600;
+    background: var(--ink);
+    color: var(--bg);
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .pr-form .pr-note {
+    margin: 0;
+    font-size: 0.9rem;
+    max-width: none;
+  }
+  .pr-foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem 2rem;
+    padding: 2rem clamp(1.25rem, 5vw, 4rem) 5rem;
+    border-top: 1px solid var(--rule);
+    color: var(--muted-on-dark);
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 56rem) {
+    .pr-hero,
+    .pr-bio,
+    .pr-contact {
+      grid-template-columns: 1fr;
+    }
+    .pr-hero {
+      padding-top: 8rem;
+    }
+    .pr-seal {
+      left: -0.5rem;
+      width: 7rem;
+    }
+    .pr-bio-side {
+      justify-self: start;
+    }
+    .pr-row {
+      grid-template-columns: 1fr;
+    }
+    .pr-top ul {
+      gap: 1rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  /* ---- motion: always an enhancement over a fully visible page ---- */
+  @media (prefers-reduced-motion: no-preference) {
+    .pr-line > span,
+    .pr-line em > span {
+      animation: pr-up 1.1s var(--ease) backwards;
+    }
+    .pr-line:nth-child(2) > em > span {
+      animation-delay: 0.12s;
+    }
+    .pr-tagline,
+    .pr-cta,
+    .pr-kicker {
+      animation: pr-fade 1.2s var(--ease) 0.3s backwards;
+    }
+    .pr-seal:not(.pr-seal-sm) svg {
+      animation: pr-spin 90s linear infinite;
+    }
+    @keyframes pr-up {
+      from {
+        transform: translateY(105%);
+      }
+    }
+    @keyframes pr-fade {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+    }
+    @keyframes pr-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @supports (animation-timeline: view()) {
+      .pr-par svg {
+        animation: pr-parallax linear both;
+        animation-timeline: view();
+      }
+      .pr-rise {
+        animation: pr-rise ease-out both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 55%;
+      }
+      .pr-shelf li {
+        animation-range: entry calc(var(--i, 0) * 4%) entry calc(50% + var(--i, 0) * 4%);
+      }
+      .pr-row::before {
+        animation: pr-draw ease-out both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 70%;
+      }
+      @keyframes pr-parallax {
+        from {
+          transform: translateY(-7%) scale(1.14);
+        }
+        to {
+          transform: translateY(7%) scale(1.14);
+        }
+      }
+      @keyframes pr-rise {
+        from {
+          opacity: 0;
+          transform: translateY(32px);
+        }
+      }
+      @keyframes pr-draw {
+        from {
+          transform: scaleX(0);
+        }
+      }
+    }
+  }
+</style>

@@ -1,6 +1,6 @@
 # webdle — Personal Brand Websites — Project Handoff
 
-**Status:** Demo build. Landing page plus two sample client sites (`jane-teacher`, `john-writer`) build successfully. No real clients, no deployment yet.
+**Status:** Demo build. A landing page plus four design directions (Prestige, Warmth, Wow, Calm), each rendered for two fictional sample clients (`jane-teacher`, `john-writer`), build successfully. No real clients, no deployment yet.
 **Audience for this doc:** You (the developer) and Claude, acting as a coding assistant.
 **Last updated:** 2026-10-03
 
@@ -99,13 +99,20 @@ webdle/
 │   └── john-writer/config.ts    # sample writer (fictional)
 ├── src/
 │   ├── schemas/client.ts        # Zod schemas (§6)
-│   ├── lib/clients.ts           # loads + validates every clients/*/config.ts
-│   ├── layouts/ClientLayout.astro
-│   ├── components/              # Section, Entry
-│   ├── styles/global.css        # Tailwind 4 + per-archetype themes
+│   ├── lib/
+│   │   ├── clients.ts           # loads + validates every clients/*/config.ts
+│   │   ├── view.ts              # direction registry + per-client view model
+│   │   └── art.ts               # seeded generative SVG art (no stock photos)
+│   ├── layouts/Base.astro       # html shell, JSON-LD, demo switcher
+│   ├── components/DemoSwitcher.astro
+│   ├── templates/               # one full design per direction
+│   │   ├── Prestige.astro  Warmth.astro  Wow.astro  Calm.astro
+│   │   └── index.ts             # direction -> template map
+│   ├── scripts/wow.ts           # GSAP + ScrollTrigger + Lenis (Wow only)
 │   └── pages/
 │       ├── index.astro          # webdle landing page / demo showcase
-│       └── [client]/            # index, about, work, contact
+│       └── [direction]/[client].astro
+├── PRODUCT.md                   # product context for design tooling
 └── astro.config.mjs
 ```
 
@@ -122,9 +129,9 @@ webdle/
 deployed to that client's domain. This matches the one-domain-per-client model
 and isolates builds.
 
-**[FACT]** Resolved for the demo (built and tested 2026-10-03): `[client]` pages use a
-real `getStaticPaths` that enumerates every client from `src/lib/clients.ts` (option 1
-below). All clients build together under `/<slug>/`, which suits a single demo site.
+**[FACT]** Resolved for the demo (built and tested 2026-10-03): `[direction]/[client]` pages use a
+real `getStaticPaths` that enumerates every direction and client from `src/lib/` (option 1
+below). Everything builds together under `/<direction>/<slug>/`, which suits a single demo site.
 A bad config fails the build with a Zod error (tested).
 
 **[TODO]** Production per-client builds (`janeteacher.com/about/` with no slug prefix)
@@ -138,7 +145,16 @@ Original options, kept for reference:
    in production URLs (`janeteacher.com/about/` instead of
    `janeteacher.com/jane-teacher/about/`).
 
-### URL structure (production, per client)
+### URL structure
+
+**Demo (built):** each design direction is a single long-scroll page per client.
+
+- `/` — webdle landing page
+- `/<direction>/<client>/` — e.g. `/prestige/jane-teacher/`, `/wow/john-writer/`
+
+**[TODO] Production (per client):** the original plan below is not built. The demo
+single-page layout may be fine for real clients, or they may want separate pages for SEO.
+Decide when the first real client is signed.
 
 - `clientdomain.com/` — home
 - `clientdomain.com/about/` — bio, education, teaching/publications
@@ -148,6 +164,24 @@ Original options, kept for reference:
 The `/about/` page structure is modeled on the reference site
 (`robyndiner.com/about/`): narrative bio → education → teaching/work history.
 This is a **[FACT]** reference, not a template to copy verbatim.
+
+### Design directions (demo)
+
+Four full designs, one per feeling a prospect should have. All render the same client data.
+
+| Direction | Feeling | World | Motion |
+|---|---|---|---|
+| Prestige | Credibility, gravitas | Oxblood, arched plates, engraved rosettes, Bodoni Moda | Scroll-linked parallax, drawn rules (CSS scroll timelines) |
+| Warmth | Warmth, personality | Sunny yellow, paper-cut collage, rounded sticker UI, Bricolage Grotesque | Floating blob, marquee, rotating badge, soft reveals |
+| Wow | Cutting-edge, bold | Ultramarine and vermilion, halftone and flow-field art, Archivo width axis | GSAP: stretching name, word-by-word statement, pinned horizontal record, hover previews |
+| Calm | Calm, focused | Cool off-white, horizon scenes, Spectral | Slow fades, reading-progress hairline |
+
+Imagery is generated vector art (`src/lib/art.ts`), so there are no stock-photo licences or real
+people's likenesses. Real client photos can replace it later. Every animation is an enhancement over
+a fully visible page and has a `prefers-reduced-motion` fallback (verified: content is visible with
+JavaScript off and with reduced motion on all 8 pages).
+
+---
 
 ---
 
@@ -160,7 +194,10 @@ This is a **[FACT]** reference, not a template to copy verbatim.
 | Tailwind integration | `@tailwindcss/vite` | `^4.3.3` | Replaces `@astrojs/tailwind`, which is for Tailwind 3 |
 | Sitemap | `@astrojs/sitemap` | not installed | [TODO] add once the real `site` URL is known |
 | Validation | Zod | `^4.6.5` | Schema uses `z.url()` (Zod 4) |
-| Script runner | `tsx` | `^4.19.0` | For `scripts/*.ts` |
+| Script runner | `tsx` | not installed | [TODO] add when `scripts/*.ts` exist |
+| Animation | `gsap` (ScrollTrigger) | `^3.15.0` | Wow direction only. **[CHECK]** confirm GSAP's current licence terms before commercial use |
+| Smooth scroll | `lenis` | `^1.3.26` | Wow direction only |
+| Fonts | `@fontsource*` | `^5.3.0` | Self-hosted: Bodoni Moda, Hanken Grotesk, Bricolage Grotesque, Literata, Archivo, Spectral, Public Sans |
 | TypeScript | `typescript` | `^5.6.0` | **[CHECK]** verify |
 
 ### Why Astro

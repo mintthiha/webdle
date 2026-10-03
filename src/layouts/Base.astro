@@ -1,0 +1,41 @@
+---
+import '../styles/global.css';
+import type { Client } from '../schemas/client';
+import DemoSwitcher from '../components/DemoSwitcher.astro';
+import type { DirectionSlug } from '../lib/view';
+
+interface Props {
+  client: Client;
+  direction: DirectionSlug;
+  title: string;
+  themeColor: string;
+}
+
+const { client, direction, title, themeColor } = Astro.props;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: client.name,
+  description: client.tagline,
+  url: client.domain,
+  ...(client.sameAs.length > 0 && { sameAs: client.sameAs }),
+};
+---
+
+<!doctype html>
+<html lang="en" data-direction={direction}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content={themeColor} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+    <meta name="description" content={client.tagline} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </head>
+  <body>
+    <slot />
+    <DemoSwitcher clientSlug={client.slug} current={direction} />
+  </body>
+</html>

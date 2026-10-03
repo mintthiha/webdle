@@ -1,0 +1,731 @@
+---
+import '@fontsource-variable/archivo/wdth.css';
+import Base from '../layouts/Base.astro';
+import { flow, halftone, cover } from '../lib/art';
+import { toView } from '../lib/view';
+import type { Client } from '../schemas/client';
+
+interface Props {
+  client: Client;
+}
+const { client } = Astro.props;
+const v = toView(client);
+const s = client.slug;
+
+const heroArt = halftone({ seed: `${s}-wo-hero`, step: 24 });
+const plates = [
+  flow({ seed: `${s}-wo-p1`, w: 1600, h: 900, step: 34 }),
+  halftone({ seed: `${s}-wo-p2`, w: 1600, h: 900, step: 28 }),
+  flow({ seed: `${s}-wo-p3`, w: 1600, h: 900, step: 26 }),
+];
+const panelArt = (i: number) => flow({ seed: `${s}-wo-panel-${i}`, w: 800, h: 700, step: 40 });
+
+const rows =
+  client.archetype === 'writer'
+    ? v.publications.map((p, i) => ({
+        title: p.title,
+        meta: `${v.typeLabel[p.type]} · ${p.venue}`,
+        year: String(p.year),
+        art: cover({ title: p.title, sub: `${p.venue}, ${p.year}`, seed: `${s}-wo-${p.title}`, kind: (i + 2) % 4 }),
+      }))
+    : v.courses.map((c, i) => ({
+        title: c.course,
+        meta: c.institution,
+        year: '',
+        art: cover({ title: c.course, sub: c.institution, seed: `${s}-wo-${c.course}`, kind: (i + 2) % 4 }),
+      }));
+
+const record = [
+  ...v.education.map((c) => ({
+    big: String(c.year),
+    title: c.degree,
+    where: [c.institution, c.location].filter(Boolean).join(', '),
+  })),
+  ...v.roles.map((r) => ({
+    big: v.period(r.startYear, r.endYear),
+    title: r.role,
+    where: [r.institution, r.department].filter(Boolean).join(' · '),
+  })),
+];
+
+const chars = [...client.name.split(' ')[0].toUpperCase()];
+const chars2 = [...(client.name.split(' ').slice(1).join(' ') || '').toUpperCase()];
+const words = client.bio.split(' ');
+const ribbon = `${v.nowLabel}: ${v.nowLine}`;
+---
+
+<Base client={client} direction="wow" title={`${client.name} · ${v.role}`} themeColor="#2330c8">
+  <div class="wo">
+    <div class="wo-progress" aria-hidden="true"></div>
+
+    <header class="wo-top">
+      <a class="wo-brand" href="#top">{client.name}</a>
+      <nav aria-label="Main">
+        <a href="#statement">About</a>
+        <a href="#record">Record</a>
+        <a href="#work">{v.workLabel}</a>
+        <a href="#talk">Contact</a>
+      </nav>
+    </header>
+
+    <section class="wo-hero" id="top">
+      <div class="wo-outline" aria-hidden="true">
+        <p class="wo-outline-a">{client.name.toUpperCase()} · {client.name.toUpperCase()} · {client.name.toUpperCase()}</p>
+        <p class="wo-outline-b">{v.role.toUpperCase()} · {v.role.toUpperCase()} · {v.role.toUpperCase()} · {v.role.toUpperCase()}</p>
+      </div>
+      <div class="wo-hero-art" aria-hidden="true">
+        <div class="wo-hero-parallax" set:html={heroArt} />
+      </div>
+      <div class="wo-hero-copy">
+        <h1 class="wo-name" aria-label={client.name}>
+          <span class="wo-line" aria-hidden="true">{chars.map((c) => <span class="wo-char">{c}</span>)}</span>
+          <span class="wo-line" aria-hidden="true">{chars2.map((c) => <span class="wo-char">{c === ' ' ? ' ' : c}</span>)}</span>
+        </h1>
+        <p class="wo-tag wo-hero-fade">{client.tagline}</p>
+        <div class="wo-actions wo-hero-fade">
+          <a class="wo-btn wo-mag" href="#talk">Let's talk</a>
+          <a class="wo-btn wo-btn-line wo-mag" href="#work">See the {v.workLabel.toLowerCase()}</a>
+        </div>
+      </div>
+      <p class="wo-scroll wo-hero-fade" aria-hidden="true"><span></span>Scroll</p>
+    </section>
+
+    <section class="wo-statement" id="statement">
+      <p aria-label={client.bio}>
+        {words.map((w) => <span class="wo-word" aria-hidden="true">{w} </span>)}
+      </p>
+    </section>
+
+    <div class="wo-ribbon" aria-label={ribbon}>
+      <div class="wo-ribbon-track" aria-hidden="true">
+        {[0, 1].map(() => (
+          <ul>
+            {[0, 1, 2, 3].map(() => <li>{ribbon}<span>✦</span></li>)}
+          </ul>
+        ))}
+      </div>
+    </div>
+
+    <section class="wo-hscroll" id="record">
+      <h2 class="wo-sec-title">Record</h2>
+      <div class="wo-htrack">
+        {record.map((r, i) => (
+          <article class="wo-panel">
+            <div class="wo-panel-art" aria-hidden="true" set:html={panelArt(i)} />
+            <p class="wo-panel-big">{r.big}</p>
+            <div>
+              <h3>{r.title}</h3>
+              <p>{r.where}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="wo-work" id="work">
+      <h2 class="wo-sec-title">{client.archetype === 'teacher' ? 'Courses' : 'Selected work'}</h2>
+      <ul class="wo-rows">
+        {rows.map((r) => (
+          <li class="wo-row" tabindex="0">
+            <div class="wo-row-main">
+              <h3>{r.title}</h3>
+              <p>{r.meta}</p>
+            </div>
+            {r.year && <p class="wo-row-year">{r.year}</p>}
+            <div class="wo-preview" aria-hidden="true" set:html={r.art} />
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="wo-reel" aria-hidden="true">
+      {plates.map((p) => <div class="wo-plate" set:html={p} />)}
+    </section>
+
+    <section class="wo-talk" id="talk">
+      <h2>Let's talk.</h2>
+      <!-- [TODO: form endpoint] No form service chosen yet; the form is inert in this demo. -->
+      <form class="wo-form">
+        <label>Name<input type="text" name="name" autocomplete="name" /></label>
+        <label>Email<input type="email" name="email" autocomplete="email" /></label>
+        <label class="wo-wide">Message<textarea name="message" rows="3"></textarea></label>
+        <button type="button" disabled class="wo-send">Send message</button>
+        <p>Demo only. The form is not connected on sample sites.</p>
+      </form>
+    </section>
+
+    <footer class="wo-foot">
+      <span>© {new Date().getFullYear()} {client.name}</span>
+      <span>Sample site with fictional content, a demo by webdle.</span>
+    </footer>
+  </div>
+</Base>
+
+<script>
+  import '../scripts/wow';
+</script>
+
+<style is:global>
+  html[data-direction='wow'] {
+    background: oklch(0.42 0.26 265);
+  }
+  .wo {
+    --blue: oklch(0.42 0.26 265);
+    --blue-lit: oklch(0.78 0.14 265);
+    --ink: oklch(0.14 0.03 270);
+    --white: oklch(0.97 0.01 270);
+    --vermilion: oklch(0.68 0.24 35);
+    --art-1: oklch(0.68 0.24 35);
+    --art-2: oklch(0.97 0.01 270);
+    --art-3: oklch(0.78 0.14 265);
+    --art-4: oklch(0.55 0.22 265);
+    --art-5: oklch(0.14 0.03 270);
+    --cv-bg: oklch(0.97 0.01 270);
+    --cv-ink: oklch(0.14 0.03 270);
+    --cv-font: 'Archivo Variable', sans-serif;
+    --cv-weight: 800;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif;
+    font-stretch: 100%;
+    color: var(--white);
+    background: var(--blue);
+    line-height: 1.5;
+    overflow-x: clip;
+  }
+  .wo svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .wo h1,
+  .wo h2,
+  .wo h3 {
+    margin: 0;
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    line-height: 0.92;
+  }
+  .wo a:focus-visible,
+  .wo button:focus-visible,
+  .wo input:focus-visible,
+  .wo textarea:focus-visible,
+  .wo .wo-row:focus-visible {
+    outline: 3px solid var(--vermilion);
+    outline-offset: 4px;
+  }
+  .wo-progress {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 60;
+    height: 4px;
+    background: var(--vermilion);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  /* ---- top ---- */
+  .wo-top {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 50;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.1rem clamp(1.25rem, 4vw, 3rem);
+    mix-blend-mode: difference;
+    color: #fff;
+  }
+  .wo-brand {
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    color: inherit;
+    text-decoration: none;
+  }
+  .wo-top nav {
+    display: flex;
+    gap: clamp(1rem, 3vw, 2rem);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .wo-top nav a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .wo-top nav a:hover {
+    text-decoration: underline;
+    text-underline-offset: 6px;
+    text-decoration-thickness: 2px;
+  }
+
+  /* ---- hero ---- */
+  .wo-hero {
+    --sx: 70%;
+    --sy: 40%;
+    position: relative;
+    min-height: 100svh;
+    display: grid;
+    align-items: center;
+    padding: 7rem clamp(1.25rem, 4vw, 3rem) 4rem;
+    overflow: hidden;
+    isolation: isolate;
+    background:
+      radial-gradient(38rem circle at var(--sx) var(--sy), oklch(0.5 0.27 265) 0%, transparent 70%),
+      var(--blue);
+  }
+  .wo-outline {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    display: grid;
+    align-content: space-between;
+    padding-block: 7rem 3rem;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .wo-outline p {
+    margin: 0;
+    white-space: nowrap;
+    font-weight: 900;
+    font-stretch: 125%;
+    font-size: clamp(5rem, 15vw, 12rem);
+    line-height: 0.9;
+    color: transparent;
+    -webkit-text-stroke: 1.5px oklch(0.7 0.12 265 / 0.45);
+  }
+  .wo-outline-b {
+    margin-left: -30vw !important;
+  }
+  .wo-hero-art {
+    position: absolute;
+    right: clamp(-6rem, -4vw, 0rem);
+    top: 50%;
+    width: min(62vw, 46rem);
+    aspect-ratio: 1;
+    translate: 0 -50%;
+    z-index: -1;
+  }
+  .wo-hero-parallax {
+    width: 100%;
+    height: 100%;
+    mix-blend-mode: screen;
+    opacity: 0.95;
+    mask-image: radial-gradient(circle at center, #000 38%, transparent 70%);
+  }
+  .wo-hero-copy {
+    max-width: 44rem;
+  }
+  .wo-name {
+    font-size: clamp(3.4rem, 12vw, 6rem);
+    font-stretch: 75%;
+    font-weight: 900;
+    line-height: 0.88;
+    letter-spacing: -0.015em;
+  }
+  .wo-line {
+    display: block;
+    overflow: hidden;
+    padding-bottom: 0.05em;
+  }
+  .wo-char {
+    display: inline-block;
+    will-change: transform;
+  }
+  .wo-tag {
+    margin: 1.75rem 0 0;
+    max-width: 30ch;
+    font-size: clamp(1.15rem, 1.8vw, 1.5rem);
+    font-weight: 500;
+    line-height: 1.35;
+  }
+  .wo-actions {
+    margin-top: 2.25rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .wo-btn {
+    display: inline-block;
+    padding: 1rem 1.75rem;
+    border-radius: 999px;
+    background: var(--vermilion);
+    color: var(--ink);
+    font-weight: 800;
+    font-size: 1.05rem;
+    text-decoration: none;
+    border: 2px solid var(--vermilion);
+    transition: background 0.3s, color 0.3s;
+  }
+  .wo-btn:hover {
+    background: var(--white);
+    border-color: var(--white);
+  }
+  .wo-btn-line {
+    background: transparent;
+    color: var(--white);
+    border-color: oklch(0.97 0.01 270 / 0.6);
+  }
+  .wo-btn-line:hover {
+    background: var(--white);
+    color: var(--blue);
+  }
+  .wo-scroll {
+    position: absolute;
+    left: clamp(1.25rem, 4vw, 3rem);
+    bottom: 1.75rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .wo-scroll span {
+    width: 3.5rem;
+    height: 2px;
+    background: var(--white);
+    transform-origin: left;
+  }
+
+  /* ---- statement ---- */
+  .wo-statement {
+    background: var(--ink);
+    padding: clamp(6rem, 14vw, 12rem) clamp(1.25rem, 4vw, 3rem);
+  }
+  .wo-statement p {
+    margin: 0 auto;
+    max-width: 62rem;
+    font-size: clamp(1.75rem, 4.2vw, 3.4rem);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    text-wrap: pretty;
+  }
+  .wo-word {
+    display: inline;
+  }
+
+  /* ---- ribbon ---- */
+  .wo-ribbon {
+    background: var(--vermilion);
+    color: var(--ink);
+    overflow: hidden;
+    padding: 1.1rem 0;
+    transform: rotate(-1.4deg) scale(1.03);
+    margin-block: -1rem;
+    position: relative;
+    z-index: 2;
+  }
+  .wo-ribbon-track {
+    display: flex;
+    width: max-content;
+  }
+  .wo-ribbon-track ul {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    white-space: nowrap;
+    font-size: clamp(1.4rem, 3vw, 2.4rem);
+    font-weight: 850;
+    text-transform: uppercase;
+  }
+  .wo-ribbon-track li {
+    display: inline-flex;
+    gap: 1.5rem;
+    padding-right: 1.5rem;
+    align-items: center;
+  }
+
+  /* ---- record (horizontal) ---- */
+  .wo-hscroll {
+    position: relative;
+    background: var(--blue);
+    padding: clamp(5rem, 9vw, 7rem) 0 clamp(4rem, 8vw, 6rem);
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .wo-hscroll.is-pinned {
+    height: 100svh;
+    overflow: hidden;
+    padding-bottom: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .wo-sec-title {
+    padding: 0 clamp(1.25rem, 4vw, 3rem);
+    font-size: clamp(2.5rem, 7vw, 5.5rem);
+    margin-bottom: clamp(1.5rem, 4vw, 3rem);
+  }
+  .wo-htrack {
+    display: flex;
+    gap: clamp(1rem, 2vw, 2rem);
+    width: max-content;
+    padding: 0 clamp(1.25rem, 4vw, 3rem);
+    flex: 1;
+    align-items: stretch;
+    margin-bottom: clamp(2rem, 5vw, 4rem);
+  }
+  .wo-hscroll:not(.is-pinned) .wo-htrack {
+    flex: none;
+    min-height: 26rem;
+  }
+  .wo-panel {
+    position: relative;
+    flex: 0 0 clamp(19rem, 46vw, 40rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+    border: 2px solid oklch(0.97 0.01 270 / 0.35);
+    border-radius: 1.75rem;
+    overflow: hidden;
+    isolation: isolate;
+    background: oklch(0.36 0.24 265);
+  }
+  .wo-panel:nth-child(even) {
+    background: var(--ink);
+  }
+  .wo-panel-art {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.3;
+  }
+  .wo-panel-big {
+    margin: 0;
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 900;
+    font-stretch: 125%;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    color: transparent;
+    -webkit-text-stroke: 2px var(--white);
+  }
+  .wo-panel h3 {
+    font-size: clamp(1.5rem, 2.6vw, 2.2rem);
+    line-height: 1;
+    margin-bottom: 0.6rem;
+  }
+  .wo-panel p:last-child,
+  .wo-panel div p {
+    margin: 0;
+    font-size: 1.1rem;
+    color: oklch(0.9 0.03 270);
+  }
+
+  /* ---- work ---- */
+  .wo-work {
+    background: var(--ink);
+    padding: clamp(5rem, 10vw, 8rem) 0;
+  }
+  .wo-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0 clamp(1.25rem, 4vw, 3rem);
+  }
+  .wo-row {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: clamp(1.25rem, 2.5vw, 2rem) 0;
+    border-top: 1px solid oklch(0.97 0.01 270 / 0.25);
+    cursor: default;
+  }
+  .wo-row-main {
+    transition: translate 0.5s var(--ease);
+  }
+  .wo-row:last-child {
+    border-bottom: 1px solid oklch(0.97 0.01 270 / 0.25);
+  }
+  .wo-row h3 {
+    font-size: clamp(2rem, 6vw, 4.5rem);
+    font-stretch: 100%;
+    transition: font-stretch 0.6s var(--ease), color 0.3s;
+  }
+  .wo-row p {
+    margin: 0.5rem 0 0;
+    color: oklch(0.82 0.03 270);
+    font-size: 1.05rem;
+  }
+  .wo-row-year {
+    font-size: clamp(1.25rem, 2.2vw, 1.75rem) !important;
+    font-weight: 700;
+    color: var(--white) !important;
+    margin: 0 !important;
+  }
+  .wo-row:hover .wo-row-main,
+  .wo-row:focus-visible .wo-row-main {
+    translate: clamp(0.5rem, 2vw, 2rem) 0;
+  }
+  .wo-row:hover h3,
+  .wo-row:focus-visible h3 {
+    color: var(--vermilion);
+    font-stretch: 125%;
+  }
+  .wo-preview {
+    position: absolute;
+    left: var(--mx, 70%);
+    top: var(--my, 50%);
+    width: clamp(9rem, 14vw, 13rem);
+    aspect-ratio: 5 / 7;
+    translate: -50% -62%;
+    rotate: 4deg;
+    pointer-events: none;
+    opacity: 0;
+    scale: 0.85;
+    z-index: 5;
+    box-shadow: 0 24px 60px -12px oklch(0 0 0 / 0.6);
+    transition: opacity 0.35s var(--ease), scale 0.5s var(--ease);
+  }
+  .wo-row:hover .wo-preview,
+  .wo-row:focus-visible .wo-preview {
+    opacity: 1;
+    scale: 1;
+  }
+
+  /* ---- reel ---- */
+  .wo-reel {
+    display: grid;
+    background: var(--ink);
+  }
+  .wo-plate {
+    height: min(80vh, 46rem);
+    overflow: hidden;
+  }
+  .wo-plate:nth-child(1) {
+    background: var(--blue);
+  }
+  .wo-plate:nth-child(2) {
+    background: var(--vermilion);
+    --art-1: oklch(0.14 0.03 270);
+  }
+  .wo-plate:nth-child(3) {
+    background: oklch(0.97 0.01 270);
+    --art-1: oklch(0.42 0.26 265);
+    --art-2: oklch(0.68 0.24 35);
+    --art-3: oklch(0.14 0.03 270);
+  }
+
+  /* ---- talk ---- */
+  .wo-talk {
+    background: var(--vermilion);
+    color: var(--ink);
+    padding: clamp(5rem, 10vw, 9rem) clamp(1.25rem, 4vw, 3rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: end;
+  }
+  .wo-talk h2 {
+    font-size: clamp(3.4rem, 11vw, 6rem);
+    font-stretch: 110%;
+    line-height: 0.88;
+  }
+  .wo-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+  .wo-form label {
+    display: grid;
+    gap: 0.35rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .wo-wide {
+    grid-column: 1 / -1;
+  }
+  .wo-form input,
+  .wo-form textarea {
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid var(--ink);
+    padding: 0.5rem 0;
+    font: inherit;
+    font-size: 1.2rem;
+    color: var(--ink);
+    border-radius: 0;
+  }
+  .wo-send {
+    justify-self: start;
+    padding: 1rem 1.75rem;
+    border-radius: 999px;
+    border: 0;
+    background: var(--ink);
+    color: var(--white);
+    font: 800 1.05rem 'Archivo Variable', sans-serif;
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .wo-form p {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 0.95rem;
+  }
+  .wo-foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem 2rem;
+    padding: 1.5rem clamp(1.25rem, 4vw, 3rem) 5rem;
+    background: var(--ink);
+    color: oklch(0.85 0.02 270);
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 56rem) {
+    .wo-talk {
+      grid-template-columns: 1fr;
+    }
+    .wo-form {
+      grid-template-columns: 1fr;
+    }
+    .wo-hero-art {
+      width: 110vw;
+      right: -35vw;
+      opacity: 0.55;
+    }
+    .wo-top nav a:nth-child(-n + 2) {
+      display: none;
+    }
+    .wo-row {
+      flex-wrap: wrap;
+    }
+    .wo-preview {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .wo-ribbon-track {
+      animation: wo-run 28s linear infinite;
+    }
+    .wo-scroll span {
+      animation: wo-line 2.2s var(--ease) infinite;
+    }
+    @keyframes wo-run {
+      to {
+        transform: translateX(-50%);
+      }
+    }
+    @keyframes wo-line {
+      0% {
+        transform: scaleX(0);
+      }
+      60% {
+        transform: scaleX(1);
+      }
+      100% {
+        transform: scaleX(1);
+        opacity: 0;
+      }
+    }
+  }
+</style>

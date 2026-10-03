@@ -1,0 +1,453 @@
+---
+import '@fontsource/spectral/300.css';
+import '@fontsource/spectral/300-italic.css';
+import '@fontsource/spectral/400.css';
+import '@fontsource-variable/public-sans/wght.css';
+import Base from '../layouts/Base.astro';
+import { horizon } from '../lib/art';
+import { toView } from '../lib/view';
+import type { Client } from '../schemas/client';
+
+interface Props {
+  client: Client;
+}
+const { client } = Astro.props;
+const v = toView(client);
+const s = client.slug;
+
+const heroArt = horizon({ seed: `${s}-ca-hero`, motif: v.motif, w: 1600, h: 800 });
+const midArt = horizon({ seed: `${s}-ca-mid`, motif: v.motif, w: 1600, h: 560 });
+const endArt = horizon({ seed: `${s}-ca-end`, motif: v.motif, w: 1600, h: 560 });
+
+const work =
+  client.archetype === 'writer'
+    ? v.publications.map((p) => ({
+        title: p.title,
+        meta: `${v.typeLabel[p.type]}, ${p.venue}`,
+        year: String(p.year),
+      }))
+    : v.roles.flatMap((r) =>
+        r.courses.map((course) => ({
+          title: course,
+          meta: r.institution,
+          year: v.period(r.startYear, r.endYear),
+        })),
+      );
+
+const index = [
+  ['#about', 'About'],
+  ['#path', 'Path'],
+  ['#work', v.workLabel],
+  ['#contact', 'Contact'],
+];
+---
+
+<Base client={client} direction="calm" title={`${client.name} · ${v.role}`} themeColor="#f6f8fb">
+  <div class="ca">
+    <div class="ca-progress" aria-hidden="true"></div>
+
+    <header class="ca-top">
+      <a href="#top" class="ca-brand">{client.name}</a>
+      <nav aria-label="Main">
+        <ul>
+          {index.map(([href, label]) => <li><a href={href}>{label}</a></li>)}
+        </ul>
+      </nav>
+    </header>
+
+    <section class="ca-hero" id="top">
+      <div class="ca-hero-art ca-par" aria-hidden="true" set:html={heroArt} />
+      <div class="ca-hero-copy">
+        <p class="ca-role">{v.role}{client.location && <> · {client.location}</>}</p>
+        <h1>{client.name}</h1>
+        <p class="ca-tagline">{client.tagline}</p>
+      </div>
+    </section>
+
+    <main class="ca-main">
+      <section class="ca-sec" id="about">
+        <h2 class="ca-rise">About</h2>
+        <p class="ca-bio ca-rise">{client.bio}</p>
+        <p class="ca-now ca-rise"><span>{v.nowLabel}</span> {v.nowLine}</p>
+      </section>
+
+      <div class="ca-band ca-par" aria-hidden="true" set:html={midArt} />
+
+      <section class="ca-sec" id="path">
+        <h2 class="ca-rise">Path</h2>
+        <ol class="ca-list">
+          {v.education.map((c) => (
+            <li class="ca-rise">
+              <span class="ca-when">{c.year}</span>
+              <div>
+                <h3>{c.degree}</h3>
+                <p>{[c.institution, c.location].filter(Boolean).join(', ')}</p>
+              </div>
+            </li>
+          ))}
+          {v.roles.map((r) => (
+            <li class="ca-rise">
+              <span class="ca-when">{v.period(r.startYear, r.endYear)}</span>
+              <div>
+                <h3>{r.role}</h3>
+                <p>{[r.institution, r.department].filter(Boolean).join(' · ')}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section class="ca-sec" id="work">
+        <h2 class="ca-rise">{client.archetype === 'teacher' ? 'Courses' : 'Writing'}</h2>
+        <ol class="ca-list">
+          {work.map((w) => (
+            <li class="ca-rise">
+              <span class="ca-when">{w.year}</span>
+              <div>
+                <h3>{w.title}</h3>
+                <p>{w.meta}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <div class="ca-band ca-par" aria-hidden="true" set:html={endArt} />
+
+      <section class="ca-sec" id="contact">
+        <h2 class="ca-rise">Contact</h2>
+        <p class="ca-bio ca-rise">
+          {client.archetype === 'teacher'
+            ? 'For speaking, consulting or collaboration, a short note is welcome.'
+            : 'For press, events or rights enquiries, a short note is welcome.'}
+        </p>
+        <!-- [TODO: form endpoint] No form service chosen yet; the form is inert in this demo. -->
+        <form class="ca-form ca-rise">
+          <label>Name<input type="text" name="name" autocomplete="name" /></label>
+          <label>Email<input type="email" name="email" autocomplete="email" /></label>
+          <label>Message<textarea name="message" rows="4"></textarea></label>
+          <button type="button" disabled>Send message</button>
+          <p>Demo only. The form is not connected on sample sites.</p>
+        </form>
+      </section>
+    </main>
+
+    <footer class="ca-foot">
+      <span>© {new Date().getFullYear()} {client.name}</span>
+      <span>Sample site with fictional content, a demo by webdle.</span>
+    </footer>
+  </div>
+</Base>
+
+<style is:global>
+  html[data-direction='calm'] {
+    scroll-behavior: smooth;
+    background: oklch(0.985 0.004 250);
+  }
+  .ca {
+    --bg: oklch(0.985 0.004 250);
+    --ink: oklch(0.25 0.02 255);
+    --muted: oklch(0.45 0.02 255);
+    --line: oklch(0.88 0.01 255);
+    --accent: oklch(0.45 0.09 250);
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --art-1: oklch(0.965 0.014 250);
+    --art-2: oklch(0.89 0.045 250);
+    --art-3: oklch(0.83 0.055 250);
+    --art-4: oklch(0.62 0.08 250);
+    --art-sun: oklch(0.99 0.008 250);
+    font-family: 'Public Sans Variable', ui-sans-serif, system-ui, sans-serif;
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    color: var(--ink);
+    background: var(--bg);
+  }
+  .ca svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .ca h1,
+  .ca h2,
+  .ca h3 {
+    font-family: 'Spectral', Georgia, serif;
+    font-weight: 300;
+    margin: 0;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .ca a:focus-visible,
+  .ca button:focus-visible,
+  .ca input:focus-visible,
+  .ca textarea:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+  .ca-progress {
+    position: fixed;
+    inset: 0 0 auto 0;
+    height: 2px;
+    z-index: 40;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  .ca-top {
+    position: absolute;
+    inset: 0 0 auto 0;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1.75rem clamp(1.25rem, 5vw, 4rem);
+  }
+  .ca-brand {
+    font-family: 'Spectral', serif;
+    font-size: 1.2rem;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .ca-top ul {
+    display: flex;
+    gap: clamp(1rem, 3vw, 2rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.95rem;
+  }
+  .ca-top a {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.4s;
+  }
+  .ca-top a:hover {
+    color: var(--ink);
+  }
+
+  .ca-hero {
+    position: relative;
+    min-height: 92svh;
+    display: grid;
+    align-items: end;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .ca-hero-art {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+  }
+  .ca-hero-art svg {
+    transform: scale(1.06);
+  }
+  .ca-hero-copy {
+    padding: 8rem clamp(1.25rem, 5vw, 4rem) clamp(3.5rem, 8vw, 6rem);
+    max-width: 52rem;
+    color: oklch(0.2 0.03 255);
+  }
+  .ca-role {
+    margin: 0 0 1.25rem;
+    font-size: 1rem;
+    color: oklch(0.3 0.03 255);
+  }
+  .ca-hero h1 {
+    font-size: clamp(2.75rem, 8vw, 5.5rem);
+    line-height: 1.02;
+    font-weight: 300;
+  }
+  .ca-tagline {
+    margin: 1.5rem 0 0;
+    max-width: 34ch;
+    font-family: 'Spectral', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+    line-height: 1.4;
+  }
+
+  .ca-main {
+    padding-inline: clamp(1.25rem, 5vw, 4rem);
+  }
+  .ca-sec {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: clamp(5rem, 11vw, 9rem) 0;
+  }
+  .ca-sec h2 {
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    margin-bottom: 2rem;
+    color: var(--accent);
+  }
+  .ca-bio {
+    margin: 0;
+    font-size: clamp(1.15rem, 1.7vw, 1.3rem);
+    line-height: 1.8;
+    max-width: 62ch;
+    text-wrap: pretty;
+  }
+  .ca-now {
+    margin: 2.5rem 0 0;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+  }
+  .ca-now span {
+    color: var(--accent);
+    margin-right: 0.5rem;
+  }
+
+  .ca-band {
+    height: clamp(14rem, 34vw, 26rem);
+    margin-inline: calc(-1 * clamp(1.25rem, 5vw, 4rem));
+    overflow: hidden;
+  }
+  .ca-band svg {
+    transform: scale(1.08);
+  }
+
+  .ca-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .ca-list li {
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: 0.25rem 1.5rem;
+    padding: 1.4rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .ca-list li:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+  .ca-when {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.95rem;
+    padding-top: 0.35rem;
+  }
+  .ca-list h3 {
+    font-size: 1.45rem;
+    line-height: 1.25;
+    font-weight: 400;
+  }
+  .ca-list p {
+    margin: 0.2rem 0 0;
+    color: var(--muted);
+  }
+
+  .ca-form {
+    margin-top: 2.5rem;
+    display: grid;
+    gap: 1.5rem;
+  }
+  .ca-form label {
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+  .ca-form input,
+  .ca-form textarea {
+    border: 0;
+    border-bottom: 1px solid var(--muted);
+    background: transparent;
+    padding: 0.5rem 0;
+    font: inherit;
+    font-size: 1.1rem;
+    color: var(--ink);
+    border-radius: 0;
+  }
+  .ca-form button {
+    justify-self: start;
+    padding: 0.8rem 1.6rem;
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .ca-form p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .ca-foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem 2rem;
+    padding: 2rem clamp(1.25rem, 5vw, 4rem) 5rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 40rem) {
+    .ca-list li {
+      grid-template-columns: 1fr;
+    }
+    .ca-top ul {
+      gap: 0.9rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  /* ---- motion: slow and quiet, always an enhancement ---- */
+  @media (prefers-reduced-motion: no-preference) {
+    .ca-hero-copy > * {
+      animation: ca-in 1.6s var(--ease) backwards;
+    }
+    .ca-hero-copy h1 {
+      animation-delay: 0.15s;
+    }
+    .ca-hero-copy .ca-tagline {
+      animation-delay: 0.35s;
+    }
+    @keyframes ca-in {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+    }
+    @supports (animation-timeline: view()) {
+      .ca-rise {
+        animation: ca-rise ease-out both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 45%;
+      }
+      .ca-par svg {
+        animation: ca-par linear both;
+        animation-timeline: view();
+      }
+      .ca-progress {
+        animation: ca-progress linear both;
+        animation-timeline: scroll(root);
+      }
+      @keyframes ca-rise {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+      }
+      @keyframes ca-par {
+        from {
+          transform: translateY(-4%) scale(1.08);
+        }
+        to {
+          transform: translateY(4%) scale(1.08);
+        }
+      }
+      @keyframes ca-progress {
+        to {
+          transform: scaleX(1);
+        }
+      }
+    }
+  }
+</style>

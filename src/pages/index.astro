@@ -1,89 +1,341 @@
 ---
+import '@fontsource/spectral/300.css';
+import '@fontsource/spectral/300-italic.css';
+import '@fontsource/spectral/400.css';
+import '@fontsource-variable/public-sans/wght.css';
 import '../styles/global.css';
 import { getClients } from '../lib/clients';
+import { directions } from '../lib/view';
+import { landscape, collage, halftone, horizon } from '../lib/art';
 
 const clients = getClients();
+
+const art = {
+  prestige: landscape({ seed: 'landing-pr', motif: 'teacher', layers: 8, w: 900, h: 600, sunSize: 0.1 }),
+  warmth: collage({ seed: 'landing-wm', w: 900, h: 600 }),
+  wow: halftone({ seed: 'landing-wo', w: 900, h: 600, step: 22 }),
+  calm: horizon({ seed: 'landing-ca', motif: 'writer', w: 900, h: 600 }),
+};
+const label = { teacher: 'teacher', writer: 'writer' } as const;
+
 const services = [
-  { title: 'Strategy', body: 'Clarify how you want to be known, who you are speaking to, and what you want the site to do.' },
-  { title: 'Design and copy', body: 'A site written and designed for your profession, built from facts you provide and approve.' },
-  { title: 'Name-search setup', body: 'Clean structure, fast pages and the technical groundwork that helps search engines understand who you are.' },
-  { title: 'Ongoing care', body: 'Content updates, maintenance and monitoring of how you appear online.' },
+  {
+    title: 'Strategy',
+    body: 'Work out how you want to be known, who you are speaking to and what the site should do for you.',
+  },
+  {
+    title: 'Design and copy',
+    body: 'A site designed and written for your profession, built from facts you provide and approve.',
+  },
+  {
+    title: 'Name-search setup',
+    body: 'Clean structure, fast pages and the technical groundwork that helps search engines understand who you are.',
+  },
+  {
+    title: 'Ongoing care',
+    body: 'Content updates, maintenance and monitoring of how you appear online.',
+  },
 ];
-const label = { teacher: 'For teachers', writer: 'For writers' };
 ---
 
 <!doctype html>
-<html lang="en" data-theme="webdle">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>webdle · Personal websites for teachers and writers</title>
     <meta
       name="description"
       content="webdle builds personal websites for teachers and writers, so the first thing people find when they search your name is you."
     />
   </head>
-  <body class="bg-paper text-ink">
-    <header class="mx-auto max-w-5xl px-6 py-6 flex items-center justify-between">
-      <span class="font-display text-2xl tracking-tight">webdle</span>
-      <a href="#demos" class="text-sm font-medium text-accent underline underline-offset-4">See the demos</a>
-    </header>
+  <body>
+    <div class="lp">
+      <header class="lp-top">
+        <a class="lp-mark" href="/">webdle</a>
+        <a class="lp-jump" href="#designs">See the designs</a>
+      </header>
 
-    <main>
-      <section class="mx-auto max-w-5xl px-6 pt-16 pb-20">
-        <h1 class="font-display text-5xl sm:text-6xl leading-[1.05] tracking-tight max-w-3xl">
-          When people search your name, they should find <em class="text-accent">you</em>.
-        </h1>
-        <p class="mt-6 text-xl text-muted max-w-2xl leading-relaxed">
+      <section class="lp-hero">
+        <h1>When people search your name, they should find <em>you</em>.</h1>
+        <p>
           webdle builds personal websites for teachers and writers: a professional home on the web
           that you control, instead of a scatter of profiles and staff pages.
         </p>
+        <a class="lp-cta" href="#designs">Explore four sample designs</a>
       </section>
 
-      <section id="demos" class="mx-auto max-w-5xl px-6 pb-20">
-        <h2 class="font-display text-3xl mb-2">Two sample sites</h2>
-        <p class="text-muted mb-8">Fictional people and content, built the way a real client site would be.</p>
-        <div class="grid gap-6 sm:grid-cols-2">
-          {clients.map((c) => (
-            <a
-              href={`/${c.slug}/`}
-              class="group block bg-card border border-line rounded-lg p-8 hover:border-accent"
-            >
-              <p class="text-xs uppercase tracking-[0.2em] text-accent font-semibold mb-3">
-                {label[c.archetype]}
-              </p>
-              <p class="font-display text-3xl mb-2">{c.name}</p>
-              <p class="text-muted mb-6">{c.tagline}</p>
-              <span class="text-accent font-medium underline underline-offset-4 group-hover:no-underline">
-                View the site →
-              </span>
-            </a>
+      <section class="lp-designs" id="designs">
+        <div class="lp-head">
+          <h2>One person, four ways to be seen</h2>
+          <p>
+            The same sample teacher and writer, designed four ways. Every site is fictional. Open
+            one, scroll through it, and use the switcher at the bottom right to compare.
+          </p>
+        </div>
+        <ul class="lp-grid">
+          {directions.map((d) => (
+            <li class={`lp-tile lp-tile-${d.slug}`}>
+              <div class="lp-art" aria-hidden="true" set:html={art[d.slug]} />
+              <div class="lp-body">
+                <p class="lp-feel">{d.feeling}</p>
+                <h3>{d.name}</h3>
+                <p>{d.blurb}</p>
+                <div class="lp-links">
+                  {clients.map((c) => (
+                    <a href={`/${d.slug}/${c.slug}/`}>
+                      {c.name} <span>({label[c.archetype]})</span> →
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="lp-services">
+        <h2>What is included</h2>
+        <div class="lp-svc">
+          {services.map((s) => (
+            <div>
+              <h3>{s.title}</h3>
+              <p>{s.body}</p>
+            </div>
           ))}
         </div>
+        <p class="lp-fine">
+          Search results depend on many factors outside anyone's control, so we do not promise
+          specific rankings or timelines.
+        </p>
+        <!-- [TODO: webdle contact link or form] -->
       </section>
 
-      <section class="border-t border-line">
-        <div class="mx-auto max-w-5xl px-6 py-20">
-          <h2 class="font-display text-3xl mb-10">What is included</h2>
-          <div class="grid gap-x-10 gap-y-8 sm:grid-cols-2">
-            {services.map((s) => (
-              <div>
-                <h3 class="font-semibold text-lg mb-1">{s.title}</h3>
-                <p class="text-muted leading-relaxed">{s.body}</p>
-              </div>
-            ))}
-          </div>
-          <p class="mt-12 text-sm text-muted max-w-2xl">
-            Search results depend on many factors outside anyone's control, so we do not promise
-            specific rankings or timelines.
-          </p>
-          <!-- [TODO: webdle contact link or form] -->
-        </div>
-      </section>
-    </main>
-
-    <footer class="border-t border-line">
-      <div class="mx-auto max-w-5xl px-6 py-8 text-sm text-muted">© {new Date().getFullYear()} webdle</div>
-    </footer>
+      <footer class="lp-foot">© {new Date().getFullYear()} webdle</footer>
+    </div>
   </body>
 </html>
+
+<style is:global>
+  html {
+    background: oklch(0.985 0.004 250);
+  }
+  .lp {
+    --ink: oklch(0.22 0.02 255);
+    --muted: oklch(0.44 0.02 255);
+    --line: oklch(0.88 0.01 255);
+    --accent: oklch(0.45 0.09 250);
+    font-family: 'Public Sans Variable', ui-sans-serif, system-ui, sans-serif;
+    color: var(--ink);
+    line-height: 1.65;
+    font-size: 1.0625rem;
+  }
+  .lp h1,
+  .lp h2,
+  .lp h3 {
+    font-family: 'Spectral', Georgia, serif;
+    font-weight: 300;
+    margin: 0;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .lp a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  .lp-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 1.75rem clamp(1.25rem, 5vw, 4rem);
+  }
+  .lp-mark {
+    font-family: 'Spectral', serif;
+    font-size: 1.5rem;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .lp-jump {
+    color: var(--accent);
+    text-underline-offset: 5px;
+  }
+  .lp-hero {
+    padding: clamp(4rem, 10vw, 8rem) clamp(1.25rem, 5vw, 4rem) clamp(4rem, 9vw, 7rem);
+    max-width: 62rem;
+  }
+  .lp-hero h1 {
+    font-size: clamp(2.6rem, 7vw, 5.25rem);
+    line-height: 1.04;
+  }
+  .lp-hero em {
+    color: var(--accent);
+  }
+  .lp-hero p {
+    margin: 1.75rem 0 0;
+    max-width: 38rem;
+    font-size: clamp(1.15rem, 1.8vw, 1.35rem);
+    color: var(--muted);
+  }
+  .lp-cta {
+    display: inline-block;
+    margin-top: 2.25rem;
+    padding: 0.95rem 1.7rem;
+    border-radius: 999px;
+    background: var(--ink);
+    color: oklch(0.985 0.004 250);
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.3s;
+  }
+  .lp-cta:hover {
+    background: var(--accent);
+  }
+  .lp-designs {
+    padding: clamp(3rem, 7vw, 6rem) clamp(1.25rem, 5vw, 4rem);
+    border-top: 1px solid var(--line);
+  }
+  .lp-head {
+    max-width: 44rem;
+    margin-bottom: 3rem;
+  }
+  .lp-head h2,
+  .lp-services h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+  }
+  .lp-head p {
+    margin: 1rem 0 0;
+    color: var(--muted);
+  }
+  .lp-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1.25rem, 2.5vw, 2rem);
+    align-items: start;
+  }
+  @media (max-width: 52rem) {
+    .lp-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .lp-tile {
+    overflow: hidden;
+    border-radius: 1.25rem;
+    border: 1px solid var(--line);
+    background: #fff;
+    display: grid;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .lp-tile:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 48px -24px oklch(0.2 0.03 255 / 0.35);
+  }
+  .lp-art {
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+  }
+  .lp-art svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .lp-body {
+    padding: 1.5rem 1.5rem 1.75rem;
+  }
+  .lp-feel {
+    margin: 0 0 0.35rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+  .lp-body h3 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  .lp-body > p:not(.lp-feel) {
+    margin: 0;
+    color: var(--muted);
+  }
+  .lp-links {
+    margin-top: 1.25rem;
+    display: grid;
+    gap: 0.25rem;
+  }
+  .lp-links a {
+    color: var(--ink);
+    text-decoration: none;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--line);
+    font-weight: 500;
+  }
+  .lp-links a span {
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .lp-links a:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* Each tile previews its direction's palette. */
+  .lp-tile-prestige {
+    --art-sky: oklch(0.36 0.1 22);
+    --art-sun: oklch(0.84 0.09 190);
+    --art-far: oklch(0.5 0.11 22);
+    --art-near: oklch(0.15 0.05 22);
+  }
+  .lp-tile-warmth {
+    --art-bg: oklch(0.9 0.17 95);
+    --art-1: oklch(0.3 0.09 335);
+    --art-2: oklch(0.74 0.16 35);
+    --art-3: oklch(0.9 0.08 165);
+    --art-4: oklch(0.84 0.09 305);
+    --art-5: oklch(0.99 0.005 95);
+  }
+  .lp-tile-wow .lp-art {
+    background: oklch(0.42 0.26 265);
+    --art-1: oklch(0.68 0.24 35);
+  }
+  .lp-tile-calm {
+    --art-1: oklch(0.965 0.014 250);
+    --art-2: oklch(0.89 0.045 250);
+    --art-3: oklch(0.83 0.055 250);
+    --art-4: oklch(0.62 0.08 250);
+    --art-sun: oklch(0.99 0.008 250);
+  }
+
+  .lp-services {
+    padding: clamp(4rem, 8vw, 7rem) clamp(1.25rem, 5vw, 4rem);
+    border-top: 1px solid var(--line);
+  }
+  .lp-svc {
+    margin-top: 2.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: 2.5rem 3rem;
+    max-width: 70rem;
+  }
+  .lp-svc h3 {
+    font-size: 1.5rem;
+    font-weight: 400;
+    margin-bottom: 0.4rem;
+  }
+  .lp-svc p {
+    margin: 0;
+    color: var(--muted);
+  }
+  .lp-fine {
+    margin: 3rem 0 0;
+    max-width: 40rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+  .lp-foot {
+    padding: 2rem clamp(1.25rem, 5vw, 4rem) 3rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+</style>

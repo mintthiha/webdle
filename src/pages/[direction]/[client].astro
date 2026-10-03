@@ -1,0 +1,20 @@
+---
+import { getClients } from '../../lib/clients';
+import { directions } from '../../lib/view';
+import { templates } from '../../templates';
+import type { Client } from '../../schemas/client';
+
+export function getStaticPaths() {
+  return directions
+    .filter((d) => d.slug in templates)
+    .flatMap((d) =>
+      getClients().map((client) => ({ params: { direction: d.slug, client: client.slug }, props: { client } })),
+    );
+}
+
+const { direction } = Astro.params as { direction: keyof typeof templates };
+const { client } = Astro.props as { client: Client };
+const Template = templates[direction];
+---
+
+<Template client={client} />
