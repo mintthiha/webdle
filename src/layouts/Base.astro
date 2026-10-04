@@ -2,7 +2,8 @@
 import '../styles/global.css';
 import type { Client } from '../schemas/client';
 import DemoSwitcher from '../components/DemoSwitcher.astro';
-import type { DirectionSlug } from '../lib/view';
+import ShareTags from '../components/ShareTags.astro';
+import { classic, directions, type DirectionSlug } from '../lib/view';
 
 interface Props {
   client: Client;
@@ -21,6 +22,7 @@ const jsonLd = {
   url: client.domain,
   ...(client.sameAs.length > 0 && { sameAs: client.sameAs }),
 };
+const design = [...directions, classic].find((d) => d.slug === direction)!.name;
 ---
 
 <!doctype html>
@@ -32,6 +34,12 @@ const jsonLd = {
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
     <meta name="description" content={client.tagline} />
+    <ShareTags
+      title={title}
+      description={`A sample site by webdle with fictional content, in the ${design} design. ${client.tagline}`}
+      image={`${direction}-${client.slug}`}
+      imageAlt={`The top of the ${design} sample site for ${client.name}`}
+    />
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
     <script is:inline>
       // How this page was reached decides how it arrives. From a tile on the landing page, it opens

@@ -5,11 +5,15 @@ import '@fontsource/spectral/400.css';
 import '@fontsource-variable/public-sans/wght.css';
 import '@fontsource-variable/besley/wght.css';
 import '../styles/global.css';
+import ShareTags from '../components/ShareTags.astro';
 import { getClients } from '../lib/clients';
 import { classic, directions } from '../lib/view';
 import { landscape, collage, overprint, horizon, marble } from '../lib/art';
 
 const clients = getClients();
+const title = 'webdle · Personal websites for teachers and writers';
+const description =
+  'webdle builds personal websites for teachers and writers, so the first thing people find when they search your name is you.';
 
 const art = {
   prestige: landscape({ seed: 'landing-pr', motif: 'teacher', layers: 8, w: 900, h: 600, sunSize: 0.1 }),
@@ -84,10 +88,13 @@ const services = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f8f9fc" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <title>webdle · Personal websites for teachers and writers</title>
-    <meta
-      name="description"
-      content="webdle builds personal websites for teachers and writers, so the first thing people find when they search your name is you."
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <ShareTags
+      title={title}
+      description={description}
+      image="home"
+      imageAlt="The webdle headline beside four sample designs fanned like a hand of cards: Prestige, Warmth, Wow and Calm"
     />
   </head>
   <body>

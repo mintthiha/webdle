@@ -2,7 +2,7 @@
 
 **Status:** Demo build. A landing page plus four design directions (Prestige, Warmth, Wow, Calm), each rendered for two fictional sample clients (`jane-teacher`, `john-writer`), build successfully. No real clients, no deployment yet.
 **Audience for this doc:** You (the developer) and Claude, acting as a coding assistant.
-**Last updated:** 2026-10-03
+**Last updated:** 2026-10-04
 
 ---
 
@@ -106,6 +106,7 @@ webdle/
 │   ├── layouts/Base.astro       # html shell, JSON-LD, demo switcher
 │   ├── components/DemoSwitcher.astro
 │   ├── components/CalmScene.astro  # Calm only: one layered horizon (sky, sun, path on the water)
+│   ├── components/ShareTags.astro  # link-preview tags (Open Graph, Twitter card, canonical) for every page
 │   ├── templates/               # one full design per direction
 │   │   ├── Prestige.astro  Warmth.astro  Wow.astro  Calm.astro
 │   │   ├── Classic.astro        # the multi-page sample: one template, four pages (home, about, work, contact)
@@ -120,7 +121,12 @@ webdle/
 │   └── pages/
 │       ├── index.astro          # webdle landing page / demo showcase
 │       ├── [direction]/[client].astro
-│       └── classic/[client]/[...page].astro   # multi-page sample: /classic/<client>/, /about/, /work/, /contact/
+│       ├── classic/[client]/[...page].astro   # multi-page sample: /classic/<client>/, /about/, /work/, /contact/
+│       └── 404.astro            # "no page at this address", in the landing page's look
+├── public/
+│   ├── robots.txt               # allows everything
+│   └── og/                      # link-preview images, made by `npm run og`
+├── scripts/og.mjs               # photographs the top of each built page into public/og/
 ├── PRODUCT.md                   # product context for design tooling
 └── astro.config.mjs
 ```
@@ -161,6 +167,19 @@ Original options, kept for reference:
 - `/` — webdle landing page
 - `/<direction>/<client>/` — e.g. `/prestige/jane-teacher/`, `/wow/john-writer/`
 - `/classic/<client>/`, `/classic/<client>/about/`, `/work/`, `/contact/` — the multi-page sample (built 2026-10-04)
+- `/404.html` — shown for any address that does not exist (built 2026-10-04)
+
+**Link previews (built 2026-10-04).** Every page carries Open Graph and Twitter card tags
+(`src/components/ShareTags.astro`). The landing page and each `/<direction>/<client>/` has its own
+1200x630 picture in `public/og/`; the Classic sub-pages share their Home picture. Sample pages say
+in the preview text that they are a webdle sample with fictional content. Run `npm run og` after
+changing a design or adding a client: it builds, photographs the top of each page in headless Edge
+or Chrome (`scripts/og.mjs`, no extra dependencies) and writes the pictures to `public/og/` and
+`dist/og/`.
+
+**[TODO]** Link previews need absolute URLs. Until `site` is set (in `astro.config.mjs`, or
+`SITE_URL=https://...` in the build environment) the image and page addresses are root-relative,
+which most apps will not follow, and no canonical link is written.
 
 **[TODO] Production (per client):** the original plan below is not built. The demo
 single-page layout may be fine for real clients, or they may want separate pages for SEO.
@@ -219,7 +238,7 @@ JavaScript off and with reduced motion on all 8 pages).
 | Tailwind integration | `@tailwindcss/vite` | `^4.3.3` | Replaces `@astrojs/tailwind`, which is for Tailwind 3 |
 | Sitemap | `@astrojs/sitemap` | not installed | [TODO] add once the real `site` URL is known |
 | Validation | Zod | `^4.6.5` | Schema uses `z.url()` (Zod 4) |
-| Script runner | `tsx` | not installed | [TODO] add when `scripts/*.ts` exist |
+| Script runner | `tsx` | not installed | [TODO] add when `scripts/*.ts` exist. `scripts/og.mjs` is plain Node and does not need it |
 | Animation | `gsap` (ScrollTrigger) | `^3.15.0` | All four directions. **[CHECK]** confirm GSAP's current licence terms before commercial use |
 | Smooth scroll | `lenis` | `^1.3.26` | All four directions |
 | Fonts | `@fontsource*` | `^5.3.0` | Self-hosted: Bodoni Moda, Hanken Grotesk, Bricolage Grotesque, Literata, Besley, League Gothic, Spectral, Public Sans, Alegreya |
