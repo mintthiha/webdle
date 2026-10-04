@@ -119,6 +119,30 @@ function startFan(root: HTMLElement) {
   cards.forEach((card, i) => tl.to(card, { y: -(16 + i * 16), rotation: (i - 1.5) * 3 }, 0));
 }
 
+/**
+ * Opening a design: note where its tile stands on screen, so the page it leads to can open out of
+ * it (the view transition in styles/global.css; Base.astro reads this on arrival).
+ */
+function rememberTile(root: HTMLElement) {
+  root.querySelectorAll<HTMLAnchorElement>('.lp-tile .lp-links a').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      const tile = a.closest('.lp-tile');
+      if (!tile || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const box = tile.getBoundingClientRect();
+      const from = {
+        t: Math.round(box.top),
+        r: Math.round(window.innerWidth - box.right),
+        b: Math.round(window.innerHeight - box.bottom),
+        l: Math.round(box.left),
+        at: Date.now(),
+      };
+      try {
+        sessionStorage.setItem('webdle-open', JSON.stringify(from));
+      } catch {}
+    });
+  });
+}
+
 /** The tiles and cards only move while they are on screen. */
 function watchTiles(tiles: NodeListOf<HTMLElement>) {
   const onScreen = new IntersectionObserver((entries) =>
@@ -136,6 +160,7 @@ function init(root: HTMLElement) {
     root.querySelectorAll<HTMLElement>("[data-dir='calm']").forEach(startSun);
     root.querySelectorAll<HTMLElement>("[data-dir='wow']").forEach(startInks);
     startFan(root);
+    rememberTile(root);
     startReveals(root);
   }
   root.classList.add('is-ready');

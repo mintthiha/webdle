@@ -1,1 +1,39 @@
 @import "tailwindcss";
+
+/*
+ * Going from one page to another is a transition, not a jump (cross-document view transitions;
+ * a browser without them navigates as before). By default one page fades into the next. Opening a
+ * design from its tile on the landing page (html.vt-open and the --vt-* insets, set in Base.astro
+ * from what src/scripts/landing.ts recorded) lets the page grow out of that tile instead.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.4s;
+  }
+  html.vt-open::view-transition-old(root) {
+    animation: vt-stay 0.8s both;
+    mix-blend-mode: normal;
+  }
+  html.vt-open::view-transition-new(root) {
+    animation: vt-open 0.8s cubic-bezier(0.65, 0, 0.2, 1) both;
+    mix-blend-mode: normal;
+  }
+  /* The page being left holds still, dimming a little, while the new one opens over it. */
+  @keyframes vt-stay {
+    to {
+      filter: brightness(0.94);
+    }
+  }
+  @keyframes vt-open {
+    from {
+      clip-path: inset(var(--vt-t) var(--vt-r) var(--vt-b) var(--vt-l) round 1.25rem);
+    }
+    to {
+      clip-path: inset(0 0 0 0 round 0rem);
+    }
+  }
+}

@@ -33,6 +33,26 @@ const jsonLd = {
     <title>{title}</title>
     <meta name="description" content={client.tagline} />
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <script is:inline>
+      // Arriving from a tile on the landing page: the page opens out of that tile (styles/global.css).
+      addEventListener('pagereveal', function (e) {
+        if (!e.viewTransition) return;
+        var from = null;
+        try {
+          from = JSON.parse(sessionStorage.getItem('webdle-open'));
+          sessionStorage.removeItem('webdle-open');
+        } catch (err) {}
+        if (!from || Date.now() - from.at > 4000) return;
+        var root = document.documentElement;
+        ['t', 'r', 'b', 'l'].forEach(function (side) {
+          root.style.setProperty('--vt-' + side, from[side] + 'px');
+        });
+        root.classList.add('vt-open');
+        e.viewTransition.finished.then(function () {
+          root.classList.remove('vt-open');
+        });
+      });
+    </script>
   </head>
   <body>
     <slot />
