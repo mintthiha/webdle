@@ -640,9 +640,18 @@ const services = [
   .lp-svc {
     margin-top: 2.5rem;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 2.5rem 3rem;
-    max-width: 70rem;
+  }
+  @media (max-width: 72rem) {
+    .lp-svc {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 36rem) {
+    .lp-svc {
+      grid-template-columns: 1fr;
+    }
   }
   .lp-svc > div {
     position: relative;
