@@ -111,10 +111,11 @@ webdle/
 │   │   └── index.ts             # direction -> template map
 │   ├── scripts/wow.ts           # Wow only: poster fitting, scroll (GSAP ScrollTrigger + Lenis)
 │   ├── scripts/wow-press.ts     # Wow only: WebGL2 ink renderer (three plates, overprint, grain)
-│   ├── scripts/page.ts          # Calm + Prestige + Warmth: smooth scroll, nav state, scroll reveals (GSAP ScrollTrigger + Lenis)
+│   ├── scripts/page.ts          # Calm + Prestige + Warmth + landing page: smooth scroll, nav state, scroll reveals (GSAP ScrollTrigger + Lenis)
 │   ├── scripts/calm.ts          # Calm only: the sun follows the scroll
 │   ├── scripts/prestige.ts      # Prestige only: plate layers part on scroll, seals turn
 │   ├── scripts/warmth.ts        # Warmth only: the tape takes its speed from the scroll, the strip of cut-outs slides, hero depth
+│   ├── scripts/landing.ts       # Landing page only: each tile moves the way its direction does (ridges part, sun rises, inks slip)
 │   └── pages/
 │       ├── index.astro          # webdle landing page / demo showcase
 │       └── [direction]/[client].astro
@@ -181,6 +182,8 @@ Four full designs, one per feeling a prospect should have. All render the same c
 | Warmth | Warmth, personality | Sunny yellow, paper-cut collage, rounded sticker UI, Bricolage Grotesque | The hero is put together like a collage: cut-outs land on the blob one by one, the badge and sticker are pressed on, the name is underlined. On scroll, cards, notes and tiles come down onto their own shadow, stickers are slapped on, headings are set down a word at a time; the tape of titles speeds up and reverses with the scroll; the strip of cut-outs slides sideways; collage pieces shift under the pointer |
 | Wow | Cutting-edge, bold | Wood-type broadside in three transparent inks (yellow, pink, blue) that overprint; Besley and League Gothic fitted to the measure | WebGL2 press: ink rolls on as you scroll, plates slip out of register with pointer and scroll speed, scroll pushes into the pink to reach the bio, the pointer pulls the inks apart where it hovers, rules and type arrive with the ink, a tape of course or publication titles runs sideways on scroll, "Print it again" re-deals the inks |
 | Calm | Calm, focused | Cool off-white, four horizon scenes from dawn to dusk, the name standing on the first horizon, Spectral | The day passes with the scroll: the sun rises behind the name, stands high over the first band, sets in the second, and the moon comes up at the foot of the page; its path on the water shimmers; headings clear out of a haze, mist lifts down paragraphs, list rules are drawn in; reading-progress hairline |
+
+The landing page shows each direction in miniature: its tiles move the way their direction does (Prestige's ridges part with the scroll, Warmth's cut-outs land and drift, Wow's inks roll on and slip out of register with the scroll and pointer, Calm's sun rises and its water shimmers), the headline rises a word at a time, and its buttons travel to the designs.
 
 Imagery is generated vector art (`src/lib/art.ts`), so there are no stock-photo licences or real
 people's likenesses. Real client photos can replace it later. Every animation is an enhancement over

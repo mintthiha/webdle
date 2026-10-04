@@ -5,8 +5,8 @@ import Lenis from 'lenis';
 gsap.registerPlugin(ScrollTrigger);
 
 /*
- * Scroll behaviour shared by Calm, Prestige and Warmth. Each template names its parts with its own
- * prefix (`ca`, `pr`, `wm`), so the helpers take that prefix.
+ * Scroll behaviour shared by Calm, Prestige, Warmth and the landing page. Each template names its
+ * parts with its own prefix (`ca`, `pr`, `wm`), so the helpers take that prefix.
  */
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));

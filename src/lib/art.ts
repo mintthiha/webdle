@@ -319,6 +319,7 @@ export function overprint(opts: { letters: { ch: string; advance: number }[]; w?
 /* Horizon: still sun/moon over water (quiet)                          */
 /* ------------------------------------------------------------------ */
 
+/** The sun is `.art-sun` and each line of its path on the water an `.art-glint`, numbered in `--n`. */
 export function horizon(opts: { seed: string; motif: Motif; w?: number; h?: number }) {
   const W = opts.w ?? 1200;
   const H = opts.h ?? 600;
@@ -329,13 +330,13 @@ export function horizon(opts: { seed: string; motif: Motif; w?: number; h?: numb
   const sr = H * (opts.motif === 'teacher' ? 0.2 : 0.13);
   let out = `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--art-1)"/><stop offset="1" style="stop-color:var(--art-2)"/></linearGradient></defs>`;
   out += `<rect width="${W}" height="${f(hy)}" fill="url(#${id})"/>`;
-  out += `<circle cx="${f(sx)}" cy="${f(hy - sr * 0.55)}" r="${f(sr)}" style="fill:var(--art-sun)"/>`;
+  out += `<circle class="art-sun" cx="${f(sx)}" cy="${f(hy - sr * 0.55)}" r="${f(sr)}" style="fill:var(--art-sun)"/>`;
   out += `<rect y="${f(hy)}" width="${W}" height="${f(H - hy)}" style="fill:var(--art-3)"/>`;
   for (let i = 0; i < 14; i++) {
     const y = hy + 6 + i * i * 1.6 + i * 3;
     if (y > H - 2) break;
     const w = sr * (1.6 - i * 0.07) * (0.6 + r() * 0.8);
-    out += `<rect x="${f(sx - w / 2)}" y="${f(y)}" width="${f(w)}" height="${f(1.5 + i * 0.25)}" rx="1" style="fill:var(--art-sun);opacity:${f(0.75 - i * 0.045)}"/>`;
+    out += `<rect class="art-glint" x="${f(sx - w / 2)}" y="${f(y)}" width="${f(w)}" height="${f(1.5 + i * 0.25)}" rx="1" style="fill:var(--art-sun);opacity:${f(0.75 - i * 0.045)};--n:${i}"/>`;
   }
   out += `<rect y="${f(hy - 1)}" width="${W}" height="1.5" style="fill:var(--art-4)"/>`;
   return svg(W, H, out);
