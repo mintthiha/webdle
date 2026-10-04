@@ -1,10 +1,8 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Lenis from 'lenis';
+import { navState, startReveals, startScroll } from './page';
 
 gsap.registerPlugin(ScrollTrigger);
-
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 /*
  * The day passes as the page is read. Each scene's sun follows the scroll: it rises behind the
@@ -20,48 +18,6 @@ const DAY: Record<string, { rise: Span; spread: Span; glow: Span; start: string;
   evening: { rise: [1.1, 0.25], spread: [1.1, 0.7], glow: [1, 0.5], start: 'top bottom', end: 'bottom top' },
   dusk: { rise: [0, 1.3], spread: [0.6, 1], glow: [0, 1], start: 'top bottom', end: 'bottom bottom' },
 };
-
-/** Marks the nav link for the section in view, and gives the header its ground once the hero is gone. */
-function navState(root: HTMLElement) {
-  const header = root.querySelector<HTMLElement>('.ca-top')!;
-  root.querySelectorAll<HTMLAnchorElement>('.ca-top nav a').forEach((a) => {
-    ScrollTrigger.create({
-      trigger: a.hash,
-      start: 'top 55%',
-      end: 'bottom 55%',
-      onToggle: (st) => (st.isActive ? a.setAttribute('aria-current', 'true') : a.removeAttribute('aria-current')),
-    });
-  });
-  ScrollTrigger.create({
-    trigger: '.ca-hero',
-    start: () => `bottom top+=${header.offsetHeight}`,
-    onEnter: () => root.classList.add('is-past'),
-    onLeaveBack: () => root.classList.remove('is-past'),
-  });
-  gsap.to('.ca-progress', { scaleX: 1, ease: 'none', scrollTrigger: { start: 0, end: 'max', scrub: true } });
-}
-
-/** Smooth scrolling, and a slow crossing to each anchor. */
-function startScroll(root: HTMLElement) {
-  const lenis = new Lenis({ lerp: 0.09 });
-  lenis.on('scroll', ScrollTrigger.update);
-  gsap.ticker.add((t) => lenis.raf(t * 1000));
-  gsap.ticker.lagSmoothing(0);
-  root.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((a) => {
-    a.addEventListener('click', (e) => {
-      const target = document.querySelector<HTMLElement>(a.hash);
-      if (!target) return;
-      e.preventDefault();
-      const to = a.hash === '#top' ? 0 : target.getBoundingClientRect().top + window.scrollY;
-      lenis.scrollTo(to, {
-        duration: clamp(Math.abs(to - window.scrollY) / 2200, 1.3, 2.8),
-        easing: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
-      });
-      target.tabIndex = -1;
-      target.focus({ preventScroll: true });
-    });
-  });
-}
 
 /** Ties each scene's sun and its path on the water to the scroll. */
 function startDay(root: HTMLElement) {
@@ -97,22 +53,10 @@ function startDay(root: HTMLElement) {
   });
 }
 
-/** Lets each waiting block in as it comes into view; neighbours that arrive together follow in turn. */
-function startReveals(root: HTMLElement) {
-  ScrollTrigger.batch(root.querySelectorAll('[data-rv]'), {
-    start: 'top 86%',
-    once: true,
-    onEnter: (els) =>
-      els.forEach((el, i) => {
-        (el as HTMLElement).style.setProperty('--d', String(i));
-        el.classList.add('is-in');
-      }),
-  });
-}
-
 function init(root: HTMLElement) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  navState(root);
+  navState(root, 'ca');
+  gsap.to('.ca-progress', { scaleX: 1, ease: 'none', scrollTrigger: { start: 0, end: 'max', scrub: true } });
   if (!reduce) {
     startScroll(root);
     startDay(root);

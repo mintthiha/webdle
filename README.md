@@ -111,7 +111,10 @@ webdle/
 │   │   └── index.ts             # direction -> template map
 │   ├── scripts/wow.ts           # Wow only: poster fitting, scroll (GSAP ScrollTrigger + Lenis)
 │   ├── scripts/wow-press.ts     # Wow only: WebGL2 ink renderer (three plates, overprint, grain)
-│   ├── scripts/calm.ts          # Calm only: the sun follows the scroll (GSAP ScrollTrigger + Lenis)
+│   ├── scripts/page.ts          # Calm + Prestige + Warmth: smooth scroll, nav state, scroll reveals (GSAP ScrollTrigger + Lenis)
+│   ├── scripts/calm.ts          # Calm only: the sun follows the scroll
+│   ├── scripts/prestige.ts      # Prestige only: plate layers part on scroll, seals turn
+│   ├── scripts/warmth.ts        # Warmth only: the tape takes its speed from the scroll, the strip of cut-outs slides, hero depth
 │   └── pages/
 │       ├── index.astro          # webdle landing page / demo showcase
 │       └── [direction]/[client].astro
@@ -174,8 +177,8 @@ Four full designs, one per feeling a prospect should have. All render the same c
 
 | Direction | Feeling | World | Motion |
 |---|---|---|---|
-| Prestige | Credibility, gravitas | Oxblood, arched plates, engraved rosettes, Bodoni Moda | Scroll-linked parallax, drawn rules (CSS scroll timelines) |
-| Warmth | Warmth, personality | Sunny yellow, paper-cut collage, rounded sticker UI, Bricolage Grotesque | Floating blob, marquee, rotating badge, soft reveals |
+| Prestige | Credibility, gravitas | Oxblood, arched plates, engraved rosettes, Bodoni Moda | The ridges or waves inside each plate part by depth as it crosses the screen; the seals are engraved line by line and turn with the page; headings rise from behind their baseline, ledger rules are drawn, books are set on the shelf one by one |
+| Warmth | Warmth, personality | Sunny yellow, paper-cut collage, rounded sticker UI, Bricolage Grotesque | The hero is put together like a collage: cut-outs land on the blob one by one, the badge and sticker are pressed on, the name is underlined. On scroll, cards, notes and tiles come down onto their own shadow, stickers are slapped on, headings are set down a word at a time; the tape of titles speeds up and reverses with the scroll; the strip of cut-outs slides sideways; collage pieces shift under the pointer |
 | Wow | Cutting-edge, bold | Wood-type broadside in three transparent inks (yellow, pink, blue) that overprint; Besley and League Gothic fitted to the measure | WebGL2 press: ink rolls on as you scroll, plates slip out of register with pointer and scroll speed, scroll pushes into the pink to reach the bio, the pointer pulls the inks apart where it hovers, rules and type arrive with the ink, a tape of course or publication titles runs sideways on scroll, "Print it again" re-deals the inks |
 | Calm | Calm, focused | Cool off-white, four horizon scenes from dawn to dusk, the name standing on the first horizon, Spectral | The day passes with the scroll: the sun rises behind the name, stands high over the first band, sets in the second, and the moon comes up at the foot of the page; its path on the water shimmers; headings clear out of a haze, mist lifts down paragraphs, list rules are drawn in; reading-progress hairline |
 
@@ -198,8 +201,8 @@ JavaScript off and with reduced motion on all 8 pages).
 | Sitemap | `@astrojs/sitemap` | not installed | [TODO] add once the real `site` URL is known |
 | Validation | Zod | `^4.6.5` | Schema uses `z.url()` (Zod 4) |
 | Script runner | `tsx` | not installed | [TODO] add when `scripts/*.ts` exist |
-| Animation | `gsap` (ScrollTrigger) | `^3.15.0` | Wow direction only. **[CHECK]** confirm GSAP's current licence terms before commercial use |
-| Smooth scroll | `lenis` | `^1.3.26` | Wow direction only |
+| Animation | `gsap` (ScrollTrigger) | `^3.15.0` | All four directions. **[CHECK]** confirm GSAP's current licence terms before commercial use |
+| Smooth scroll | `lenis` | `^1.3.26` | All four directions |
 | Fonts | `@fontsource*` | `^5.3.0` | Self-hosted: Bodoni Moda, Hanken Grotesk, Bricolage Grotesque, Literata, Besley, League Gothic, Spectral, Public Sans |
 | TypeScript | `typescript` | `^5.6.0` | **[CHECK]** verify |
 

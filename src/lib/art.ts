@@ -90,6 +90,7 @@ const svg = (w: number, h: number, inner: string, aspect = 'xMidYMid slice') =>
 /* Landscapes: layered ridges (teacher) or sea (writer)                */
 /* ------------------------------------------------------------------ */
 
+/** `data-d` on the sun and on each layer is its depth, 0 (far) to 1 (near), for scroll parallax. */
 export function landscape(opts: {
   seed: string;
   motif: Motif;
@@ -109,9 +110,9 @@ export function landscape(opts: {
   const sx = W * (0.28 + r() * 0.44);
   const sy = H * 0.3;
   const sr = H * (opts.sunSize ?? 0.1);
-  out += `<circle cx="${f(sx)}" cy="${f(sy)}" r="${f(sr)}" style="fill:var(--art-sun)"/>`;
+  out += `<circle data-d="0.12" cx="${f(sx)}" cy="${f(sy)}" r="${f(sr)}" style="fill:var(--art-sun)"/>`;
   if (opts.motif === 'writer') {
-    out += `<circle cx="${f(sx + sr * 0.35)}" cy="${f(sy - sr * 0.1)}" r="${f(sr * 0.86)}" style="fill:var(--art-sky)"/>`;
+    out += `<circle data-d="0.12" cx="${f(sx + sr * 0.35)}" cy="${f(sy - sr * 0.1)}" r="${f(sr * 0.86)}" style="fill:var(--art-sky)"/>`;
   }
   for (let i = 0; i < layers; i++) {
     const t = i / (layers - 1);
@@ -134,11 +135,11 @@ export function landscape(opts: {
       d += `L${x},${f(y)}`;
     }
     d += `L${W + step},${H}Z`;
-    out += `<path d="${d}" style="fill:${fill}"/>`;
+    out += `<path data-d="${f(t)}" d="${d}" style="fill:${fill}"/>`;
     if (opts.motif === 'writer' && i === Math.floor(layers * 0.45)) {
       const bx = W * (0.55 + r() * 0.25);
       const by = base - amp * 0.45;
-      out += `<path d="M${f(bx)},${f(by - 70)} L${f(bx + 34)},${f(by - 8)} L${f(bx)},${f(by - 8)}Z M${f(bx - 6)},${f(by - 58)} L${f(bx - 6)},${f(by - 8)} L${f(bx - 36)},${f(by - 8)}Z" style="fill:var(--art-sun)"/>`;
+      out += `<path class="art-boat" data-d="${f(t)}" d="M${f(bx)},${f(by - 70)} L${f(bx + 34)},${f(by - 8)} L${f(bx)},${f(by - 8)}Z M${f(bx - 6)},${f(by - 58)} L${f(bx - 6)},${f(by - 8)} L${f(bx - 36)},${f(by - 8)}Z" style="fill:var(--art-sun)"/>`;
     }
   }
   return svg(W, H, out);
@@ -155,9 +156,9 @@ export function rosette(opts: { seed: string; rings?: number }) {
   const ratio = 0.3 + r() * 0.12;
   let out = '';
   for (let k = 0; k < N; k++) {
-    out += `<ellipse cx="200" cy="200" rx="${R}" ry="${f(R * ratio)}" transform="rotate(${f((k * 180) / N)} 200 200)"/>`;
+    out += `<ellipse pathLength="1" style="--n:${k}" cx="200" cy="200" rx="${R}" ry="${f(R * ratio)}" transform="rotate(${f((k * 180) / N)} 200 200)"/>`;
   }
-  out += `<circle cx="200" cy="200" r="${R}"/><circle cx="200" cy="200" r="${R * 0.62}"/><circle cx="200" cy="200" r="${R * 0.2}"/>`;
+  out += [1, 0.62, 0.2].map((k, i) => `<circle pathLength="1" style="--n:${N + i * 4}" cx="200" cy="200" r="${R * k}"/>`).join('');
   return svg(400, 400, `<g fill="none" stroke="currentColor" stroke-width="0.8">${out}</g>`, 'xMidYMid meet');
 }
 
@@ -236,6 +237,7 @@ export function cover(opts: { title: string; sub?: string; seed?: string; kind?:
 /* Collage: soft organic shapes with a paper grain                     */
 /* ------------------------------------------------------------------ */
 
+/** Each shape sits in its own `g.art-piece`, numbered in `--n`, so a direction can move the pieces. */
 export function collage(opts: { seed: string; w?: number; h?: number }) {
   const W = opts.w ?? 800;
   const H = opts.h ?? 800;
@@ -259,18 +261,19 @@ export function collage(opts: { seed: string; w?: number; h?: number }) {
     const cy = gy * ch + ch / 2 + (r() - 0.5) * ch * 0.3;
     const size = Math.min(cw, ch) * (0.38 + r() * 0.22);
     const k = kinds[i % kinds.length];
+    let shape: string;
     if (k === 'blob') {
-      out += `<path d="${blob(cx, cy, size, 0.28, r)}" style="fill:${col()}"/>`;
+      shape = `<path d="${blob(cx, cy, size, 0.28, r)}" style="fill:${col()}"/>`;
     } else if (k === 'circle') {
-      out += `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(size * 0.85)}" style="fill:${col()}"/>`;
+      shape = `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(size * 0.85)}" style="fill:${col()}"/>`;
     } else if (k === 'half') {
-      out += `<path d="M${f(cx - size)},${f(cy)} A${f(size)},${f(size)} 0 0 1 ${f(cx + size)},${f(cy)}Z" transform="rotate(${f(r() * 360)} ${f(cx)} ${f(cy)})" style="fill:${col()}"/>`;
+      shape = `<path d="M${f(cx - size)},${f(cy)} A${f(size)},${f(size)} 0 0 1 ${f(cx + size)},${f(cy)}Z" transform="rotate(${f(r() * 360)} ${f(cx)} ${f(cy)})" style="fill:${col()}"/>`;
     } else if (k === 'ring') {
-      out += `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(size * 0.7)}" fill="none" stroke-width="${f(size * 0.22)}" style="stroke:${col()}"/>`;
+      shape = `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(size * 0.7)}" fill="none" stroke-width="${f(size * 0.22)}" style="stroke:${col()}"/>`;
     } else if (k === 'squiggle') {
       const pts: Pt[] = [];
       for (let s = 0; s < 6; s++) pts.push([cx - size + (s * size * 2) / 5, cy + (s % 2 ? -1 : 1) * size * 0.35]);
-      out += `<path d="${spline(pts, false)}" fill="none" stroke-width="${f(size * 0.2)}" stroke-linecap="round" style="stroke:${col()}"/>`;
+      shape = `<path d="${spline(pts, false)}" fill="none" stroke-width="${f(size * 0.2)}" stroke-linecap="round" style="stroke:${col()}"/>`;
     } else if (k === 'spark') {
       const pts: string[] = [];
       for (let s = 0; s < 16; s++) {
@@ -278,10 +281,11 @@ export function collage(opts: { seed: string; w?: number; h?: number }) {
         const rr = s % 2 ? size * 0.28 : size * 0.95;
         pts.push(`${f(cx + Math.cos(a) * rr)},${f(cy + Math.sin(a) * rr)}`);
       }
-      out += `<polygon points="${pts.join(' ')}" style="fill:${col()}"/>`;
+      shape = `<polygon points="${pts.join(' ')}" style="fill:${col()}"/>`;
     } else {
-      out += `<rect x="${f(cx - size)}" y="${f(cy - size * 0.38)}" width="${f(size * 2)}" height="${f(size * 0.76)}" rx="${f(size * 0.38)}" transform="rotate(${f(r() * 60 - 30)} ${f(cx)} ${f(cy)})" style="fill:${col()}"/>`;
+      shape = `<rect x="${f(cx - size)}" y="${f(cy - size * 0.38)}" width="${f(size * 2)}" height="${f(size * 0.76)}" rx="${f(size * 0.38)}" transform="rotate(${f(r() * 60 - 30)} ${f(cx)} ${f(cy)})" style="fill:${col()}"/>`;
     }
+    out += `<g class="art-piece" style="--n:${i}">${shape}</g>`;
   });
   const defs = `<defs><filter id="${id}" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="${hashString(opts.seed) % 100}"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0"/></filter></defs>`;
   out += `<rect width="${W}" height="${H}" filter="url(#${id})" opacity="0.35" style="mix-blend-mode:multiply"/>`;
