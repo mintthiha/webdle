@@ -108,6 +108,7 @@ webdle/
 │   ├── components/CalmScene.astro  # Calm only: one layered horizon (sky, sun, path on the water)
 │   ├── templates/               # one full design per direction
 │   │   ├── Prestige.astro  Warmth.astro  Wow.astro  Calm.astro
+│   │   ├── Classic.astro        # the multi-page sample: one template, four pages (home, about, work, contact)
 │   │   └── index.ts             # direction -> template map
 │   ├── scripts/wow.ts           # Wow only: poster fitting, scroll (GSAP ScrollTrigger + Lenis)
 │   ├── scripts/wow-press.ts     # Wow only: WebGL2 ink renderer (three plates, overprint, grain)
@@ -118,7 +119,8 @@ webdle/
 │   ├── scripts/landing.ts       # Landing page only: each tile moves the way its direction does (ridges part, sun rises, inks slip)
 │   └── pages/
 │       ├── index.astro          # webdle landing page / demo showcase
-│       └── [direction]/[client].astro
+│       ├── [direction]/[client].astro
+│       └── classic/[client]/[...page].astro   # multi-page sample: /classic/<client>/, /about/, /work/, /contact/
 ├── PRODUCT.md                   # product context for design tooling
 └── astro.config.mjs
 ```
@@ -158,6 +160,7 @@ Original options, kept for reference:
 
 - `/` — webdle landing page
 - `/<direction>/<client>/` — e.g. `/prestige/jane-teacher/`, `/wow/john-writer/`
+- `/classic/<client>/`, `/classic/<client>/about/`, `/work/`, `/contact/` — the multi-page sample (built 2026-10-04)
 
 **[TODO] Production (per client):** the original plan below is not built. The demo
 single-page layout may be fine for real clients, or they may want separate pages for SEO.
@@ -175,6 +178,7 @@ This is a **[FACT]** reference, not a template to copy verbatim.
 ### Design directions (demo)
 
 Four full designs, one per feeling a prospect should have. All render the same client data.
+A fifth sample, **Classic**, is a multi-page site rather than one long page (see below the table).
 
 | Direction | Feeling | World | Motion |
 |---|---|---|---|
@@ -184,6 +188,18 @@ Four full designs, one per feeling a prospect should have. All render the same c
 | Calm | Calm, focused | Cool off-white, four horizon scenes from dawn to dusk, the name standing on the first horizon, Spectral | The day passes with the scroll: the sun rises behind the name, stands high over the first band, sets in the second, and the moon comes up at the foot of the page; its path on the water shimmers; headings clear out of a haze, mist lifts down paragraphs, list rules are drawn in; reading-progress hairline |
 
 The landing page shows each direction in miniature: its tiles move the way their direction does (Prestige's ridges part with the scroll, Warmth's cut-outs land and drift, Wow's inks roll on and slip out of register with the scroll and pointer, Calm's sun rises and its water shimmers), the headline rises a word at a time, and its buttons travel to the designs. On wide screens (80rem and up) the hero also holds the four designs as a fanned hand of cards, dealt on load; each card leans with the pointer and travels to its tile when clicked. Moving between pages is animated with cross-document view transitions (`src/styles/global.css`): opening a design from its tile lets the page grow out of that tile, and every other move between pages (the demo switcher, back to the landing page) is a short fade. Browsers without the feature navigate as before.
+
+**Classic (multi-page).** Structure modelled on the reference site (`robyndiner.com`): a header with
+the name, a line under it and the page links; separate Home, About (bio, then education and teaching
+history in open/close boxes), Teaching or Writing, and Contact pages; a footer repeating the links.
+The look is its own, not the reference's: a bound book (cloth green, gilt, marbled endpapers generated
+by `marble()` in `src/lib/art.ts`, plates mounted where photographs would hang), set in Alegreya, with
+headings set light then bold. It has no Workshops, Editing or Testimonials pages, since the sample
+configs hold no such content and none may be invented. Going from page to page, the header holds
+still, the gilt mark under the current page slides to the new one, and the page turns beneath
+(`vt-turn` in `src/templates/Classic.astro`). It is listed in the demo switcher and has its own tile
+on the landing page, under the four. **[TODO]** this is the closest thing yet to the production
+URL structure above; decide whether real clients get this layout by default.
 
 Imagery is generated vector art (`src/lib/art.ts`), so there are no stock-photo licences or real
 people's likenesses. Real client photos can replace it later. Every animation is an enhancement over
@@ -206,7 +222,7 @@ JavaScript off and with reduced motion on all 8 pages).
 | Script runner | `tsx` | not installed | [TODO] add when `scripts/*.ts` exist |
 | Animation | `gsap` (ScrollTrigger) | `^3.15.0` | All four directions. **[CHECK]** confirm GSAP's current licence terms before commercial use |
 | Smooth scroll | `lenis` | `^1.3.26` | All four directions |
-| Fonts | `@fontsource*` | `^5.3.0` | Self-hosted: Bodoni Moda, Hanken Grotesk, Bricolage Grotesque, Literata, Besley, League Gothic, Spectral, Public Sans |
+| Fonts | `@fontsource*` | `^5.3.0` | Self-hosted: Bodoni Moda, Hanken Grotesk, Bricolage Grotesque, Literata, Besley, League Gothic, Spectral, Public Sans, Alegreya |
 | TypeScript | `typescript` | `^5.6.0` | **[CHECK]** verify |
 
 ### Why Astro

@@ -1,5 +1,5 @@
 ---
-import { directions, type DirectionSlug } from '../lib/view';
+import { classic, directions, type DirectionSlug } from '../lib/view';
 import { getClients } from '../lib/clients';
 
 interface Props {
@@ -8,6 +8,7 @@ interface Props {
 }
 const { clientSlug, current } = Astro.props;
 const others = getClients().filter((c) => c.slug !== clientSlug);
+const samples = [...directions, classic];
 ---
 
 <div class="demo-bar">
@@ -15,13 +16,13 @@ const others = getClients().filter((c) => c.slug !== clientSlug);
 <details class="demo-switcher">
   <summary>
     <span class="dot" aria-hidden="true"></span>
-    Sample site · {directions.find((d) => d.slug === current)?.name}
+    Sample site · {samples.find((d) => d.slug === current)?.name}
     <span class="chev" aria-hidden="true">▴</span>
   </summary>
   <div class="panel">
     <p class="label">Same person, other designs</p>
     <ul>
-      {directions.map((d) => (
+      {samples.map((d) => (
         <li>
           <a href={`/${d.slug}/${clientSlug}/`} aria-current={d.slug === current ? 'page' : undefined}>
             {d.name}

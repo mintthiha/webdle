@@ -28,7 +28,20 @@ export const directions = [
   },
 ] as const;
 
-export type DirectionSlug = (typeof directions)[number]['slug'];
+/**
+ * A fifth sample that is not one long page but a whole site, the way a traditional author or
+ * faculty site is laid out: each page below is its own URL under /classic/<client>/.
+ */
+export const classic = {
+  slug: 'classic',
+  name: 'Classic',
+  feeling: 'A whole site, page by page',
+  blurb: 'Home, About, work and Contact as separate pages, bound like a book: green cloth, gilt and marbled endpapers.',
+} as const;
+export const classicPages = ['home', 'about', 'work', 'contact'] as const;
+export type ClassicPage = (typeof classicPages)[number];
+
+export type DirectionSlug = (typeof directions)[number]['slug'] | typeof classic.slug;
 
 export function toView(client: Client) {
   const motif: Motif = client.archetype;

@@ -6,8 +6,8 @@ import '@fontsource-variable/public-sans/wght.css';
 import '@fontsource-variable/besley/wght.css';
 import '../styles/global.css';
 import { getClients } from '../lib/clients';
-import { directions } from '../lib/view';
-import { landscape, collage, overprint, horizon } from '../lib/art';
+import { classic, directions } from '../lib/view';
+import { landscape, collage, overprint, horizon, marble } from '../lib/art';
 
 const clients = getClients();
 
@@ -37,6 +37,17 @@ const fanArt = {
     h: 720,
   }),
   calm: horizon({ seed: 'landing-ca-fan', motif: 'writer', w: 600, h: 720 }),
+};
+/** The multi-page sample: its endpaper, and a plate mounted on it. */
+const classicArt = {
+  paper: marble({
+    seed: 'landing-cl',
+    grounds: ['#efe8d6', '#e3ead9', '#c9d9c9', '#a9c3ae', '#f5f0e2'],
+    veins: ['#2f5a48', '#d9a441', '#1d3b31', '#8fae98'],
+    w: 900,
+    h: 600,
+  }),
+  plate: landscape({ seed: 'landing-cl-plate', motif: 'teacher', layers: 7, w: 480, h: 640, sunSize: 0.1 }),
 };
 const label = { teacher: 'teacher', writer: 'writer' } as const;
 
@@ -150,6 +161,39 @@ const services = [
             </li>
           ))}
         </ul>
+
+        <div class="lp-more">
+          <h2 data-rv="up">Or a whole site, page by page</h2>
+          <p data-rv="rise">
+            The four above are each one long page. This fifth sample gives the same two people a
+            site in the traditional layout, with every page at its own address.
+          </p>
+          <div class="lp-tile lp-tile-wide" data-dir="classic" data-rv="tile">
+            <div class="lp-art" aria-hidden="true">
+              <div class="lp-wide-paper" set:html={classicArt.paper} />
+              <div class="lp-wide-plate" set:html={classicArt.plate} />
+            </div>
+            <div class="lp-body">
+              <h3>{classic.name}</h3>
+              <p class="lp-feel">{classic.feeling}</p>
+              <p>{classic.blurb}</p>
+              <ul class="lp-pages" aria-label="Pages">
+                <li>Home</li>
+                <li>About</li>
+                <li>Teaching or Writing</li>
+                <li>Contact</li>
+              </ul>
+              <div class="lp-links">
+                {clients.map((c) => (
+                  <a href={`/${classic.slug}/${c.slug}/`}>
+                    <span>{c.name} <small>({label[c.archetype]})</small></span>
+                    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" /></svg>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="lp-services">
@@ -517,6 +561,76 @@ const services = [
     --art-3: oklch(0.83 0.055 250);
     --art-4: oklch(0.62 0.08 250);
     --art-sun: oklch(0.99 0.008 250);
+  }
+
+  /* ---- the fifth sample: a whole multi-page site, in a tile of its own under the four ---- */
+  [data-dir='classic'] {
+    --art-sky: #efe8d6;
+    --art-sun: #d9a441;
+    --art-far: #a9c3ae;
+    --art-near: #1d3b31;
+  }
+  .lp-more {
+    margin-top: clamp(3.5rem, 7vw, 6rem);
+  }
+  .lp-more h2 {
+    font-size: clamp(1.7rem, 3vw, 2.4rem);
+    line-height: 1.15;
+  }
+  .lp-more > p {
+    margin: 0.75rem 0 2rem;
+    max-width: 44rem;
+    color: var(--muted);
+  }
+  .lp-tile-wide {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  }
+  .lp-tile-wide .lp-art {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: auto;
+    min-height: 21rem;
+    padding: 2rem;
+  }
+  .lp-wide-paper {
+    position: absolute;
+    inset: 0;
+  }
+  .lp-wide-plate {
+    position: relative;
+    width: min(44%, 13rem);
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border: 0.4rem solid #fff;
+    box-shadow: 0 1px 0 rgb(13 32 25 / 0.1), 0 22px 36px -22px rgb(13 32 25 / 0.7);
+  }
+  .lp-tile-wide .lp-body {
+    align-self: center;
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+  }
+  .lp-pages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .lp-pages li {
+    padding: 0.15rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+  @media (max-width: 52rem) {
+    .lp-tile-wide {
+      grid-template-columns: 1fr;
+    }
+    .lp-tile-wide .lp-art {
+      min-height: 15rem;
+    }
   }
 
   .lp-services {

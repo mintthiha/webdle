@@ -316,6 +316,52 @@ export function overprint(opts: { letters: { ch: string; advance: number }[]; w?
 }
 
 /* ------------------------------------------------------------------ */
+/* Marble: the combed endpaper of a bound book                         */
+/* ------------------------------------------------------------------ */
+
+const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+
+/**
+ * Colours combed into each other. The noise is cut into bands, each band takes a colour, and a
+ * second noise drags the bands out of line. A ground colour takes a run of bands and lies wide; a
+ * vein takes one and runs thin. Colours are #rrggbb, since an SVG filter cannot read CSS custom
+ * properties. The noise keeps to the middle of its range, so the colours are dealt across it many
+ * times over.
+ */
+export function marble(opts: { seed: string; grounds: string[]; veins: string[]; w?: number; h?: number }) {
+  const W = opts.w ?? 1600;
+  const H = opts.h ?? 640;
+  const r = rng(opts.seed);
+  const id = `m${hashString(opts.seed).toString(36)}`;
+  const seed = hashString(opts.seed) % 997;
+  const bands: string[] = [];
+  while (bands.length < 60) {
+    const vein = r() < 0.36;
+    const pool = vein ? opts.veins : opts.grounds;
+    const c = pool[Math.floor(r() * pool.length)];
+    if (c === bands[bands.length - 1]) continue;
+    const run = vein ? 1 : 2 + Math.floor(r() * 3);
+    for (let k = 0; k < run; k++) bands.push(c);
+  }
+  const table = (k: number) => bands.map((c) => channels(c)[k].toFixed(3)).join(' ');
+  const pad = 140;
+  const filter =
+    `<filter id="${id}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">` +
+    `<feTurbulence type="fractalNoise" baseFrequency="0.0032 0.0075" numOctaves="3" seed="${seed}"/>` +
+    `<feColorMatrix values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1"/>` +
+    `<feComponentTransfer result="bands"><feFuncR type="discrete" tableValues="${table(0)}"/><feFuncG type="discrete" tableValues="${table(1)}"/><feFuncB type="discrete" tableValues="${table(2)}"/></feComponentTransfer>` +
+    `<feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="${seed + 11}" result="comb"/>` +
+    `<feDisplacementMap in="bands" in2="comb" scale="90" xChannelSelector="R" yChannelSelector="G"/>` +
+    `<feGaussianBlur stdDeviation="0.85"/>` +
+    `</filter>`;
+  return svg(
+    W,
+    H,
+    `<defs>${filter}</defs><rect x="${-pad}" y="${-pad}" width="${W + pad * 2}" height="${H + pad * 2}" filter="url(#${id})"/>`,
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Horizon: still sun/moon over water (quiet)                          */
 /* ------------------------------------------------------------------ */
 

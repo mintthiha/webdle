@@ -34,22 +34,30 @@ const jsonLd = {
     <meta name="description" content={client.tagline} />
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
     <script is:inline>
-      // Arriving from a tile on the landing page: the page opens out of that tile (styles/global.css).
+      // How this page was reached decides how it arrives. From a tile on the landing page, it opens
+      // out of that tile (vt-open, styles/global.css). From another page of the same multi-page
+      // site, the page turns under a header that stays put (vt-turn, templates/Classic.astro).
       addEventListener('pagereveal', function (e) {
         if (!e.viewTransition) return;
+        var root = document.documentElement;
         var from = null;
+        var turn = 0;
         try {
           from = JSON.parse(sessionStorage.getItem('webdle-open'));
+          turn = Number(sessionStorage.getItem('webdle-turn'));
           sessionStorage.removeItem('webdle-open');
+          sessionStorage.removeItem('webdle-turn');
         } catch (err) {}
-        if (!from || Date.now() - from.at > 4000) return;
-        var root = document.documentElement;
-        ['t', 'r', 'b', 'l'].forEach(function (side) {
-          root.style.setProperty('--vt-' + side, from[side] + 'px');
-        });
-        root.classList.add('vt-open');
+        var kind = Date.now() - turn < 4000 ? 'vt-turn' : from && Date.now() - from.at < 4000 ? 'vt-open' : '';
+        if (!kind) return;
+        if (kind === 'vt-open') {
+          ['t', 'r', 'b', 'l'].forEach(function (side) {
+            root.style.setProperty('--vt-' + side, from[side] + 'px');
+          });
+        }
+        root.classList.add(kind);
         e.viewTransition.finished.then(function () {
-          root.classList.remove('vt-open');
+          root.classList.remove(kind);
         });
       });
     </script>

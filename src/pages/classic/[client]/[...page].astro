@@ -1,0 +1,20 @@
+---
+import { getClients } from '../../../lib/clients';
+import { classicPages, type ClassicPage } from '../../../lib/view';
+import Classic from '../../../templates/Classic.astro';
+import type { Client } from '../../../schemas/client';
+
+/** The multi-page sample: /classic/<client>/ is Home, and each other page is a folder under it. */
+export function getStaticPaths() {
+  return getClients().flatMap((client) =>
+    classicPages.map((page) => ({
+      params: { client: client.slug, page: page === 'home' ? undefined : page },
+      props: { client, page },
+    })),
+  );
+}
+
+const { client, page } = Astro.props as { client: Client; page: ClassicPage };
+---
+
+<Classic client={client} page={page} />
