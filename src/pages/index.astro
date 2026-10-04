@@ -23,6 +23,21 @@ const art = {
   }),
   calm: horizon({ seed: 'landing-ca', motif: 'writer', w: 900, h: 600 }),
 };
+/** The same four worlds again, upright, for the hand of cards in the hero. */
+const fanArt = {
+  prestige: landscape({ seed: 'landing-pr-fan', motif: 'teacher', layers: 8, w: 600, h: 720, sunSize: 0.09 }),
+  warmth: collage({ seed: 'landing-wm-fan', w: 600, h: 720 }),
+  wow: overprint({
+    letters: [
+      { ch: 'W', advance: 1.02 },
+      { ch: 'o', advance: 0.62 },
+      { ch: 'w', advance: 0.88 },
+    ],
+    w: 600,
+    h: 720,
+  }),
+  calm: horizon({ seed: 'landing-ca-fan', motif: 'writer', w: 600, h: 720 }),
+};
 const label = { teacher: 'teacher', writer: 'writer' } as const;
 
 /** The headline as separate words, each behind its own baseline, so they can rise in turn. */
@@ -82,15 +97,28 @@ const services = [
       </header>
 
       <section class="lp-hero">
-        <h1 set:html={headline} />
-        <p>
-          webdle builds personal websites for teachers and writers: a professional home on the web
-          that you control, instead of a scatter of profiles and staff pages.
-        </p>
-        <a class="lp-cta" href="#designs">
-          Explore four sample designs
-          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 2.5v11M3.5 9 8 13.5 12.5 9" /></svg>
-        </a>
+        <div class="lp-hero-copy">
+          <h1 set:html={headline} />
+          <p>
+            webdle builds personal websites for teachers and writers: a professional home on the web
+            that you control, instead of a scatter of profiles and staff pages.
+          </p>
+          <a class="lp-cta" href="#designs">
+            Explore four sample designs
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 2.5v11M3.5 9 8 13.5 12.5 9" /></svg>
+          </a>
+        </div>
+        <!-- The four designs as a hand of cards (wide screens only); each one travels to its tile. -->
+        <ul class="lp-fan" aria-label="The four sample designs">
+          {directions.map((d, i) => (
+            <li data-dir={d.slug} style={`--i:${i}`}>
+              <a href={`#design-${d.slug}`}>
+                <div class="lp-art" aria-hidden="true" set:html={fanArt[d.slug]} />
+                <span>{d.name}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section class="lp-designs" id="designs">
@@ -103,7 +131,8 @@ const services = [
         </div>
         <ul class="lp-grid">
           {directions.map((d) => (
-            <li class={`lp-tile lp-tile-${d.slug}`} data-rv="tile">
+            <li class="lp-tile" data-dir={d.slug} data-rv="tile">
+              <span class="lp-anchor" id={`design-${d.slug}`}></span>
               <div class="lp-art" aria-hidden="true" set:html={art[d.slug]} />
               <div class="lp-body">
                 <h3>{d.name}</h3>
@@ -186,7 +215,7 @@ const services = [
   .lp [tabindex='-1']:focus {
     outline: none;
   }
-  .lp a svg {
+  .lp a > svg {
     flex: none;
     width: 1em;
     height: 1em;
@@ -265,6 +294,89 @@ const services = [
     scale: 0.97;
     transition-duration: 0.1s;
   }
+  /* ---- the hand of cards: the four designs, fanned beside the headline on wide screens ---- */
+  .lp-fan {
+    display: none;
+  }
+  @media (min-width: 80rem) {
+    .lp-hero {
+      max-width: none;
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 4rem;
+    }
+    /* Sized so the headline keeps its three lines beside the cards. */
+    .lp-hero h1 {
+      font-size: clamp(3.6rem, 5.4vw, 5.25rem);
+    }
+    .lp-fan {
+      display: block;
+      position: relative;
+      justify-self: center;
+      width: min(100%, 42rem);
+      aspect-ratio: 1.4;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .lp-fan li {
+      position: absolute;
+      top: 0;
+      left: calc(var(--i) * 19.33%);
+      width: 42%;
+    }
+    .lp-fan li:hover,
+    .lp-fan li:focus-within {
+      z-index: 1;
+    }
+    .lp-fan li:nth-child(1) {
+      --r: -9deg;
+      --y: 9%;
+    }
+    .lp-fan li:nth-child(2) {
+      --r: -3deg;
+      --y: 1%;
+    }
+    .lp-fan li:nth-child(3) {
+      --r: 3deg;
+      --y: 1%;
+    }
+    .lp-fan li:nth-child(4) {
+      --r: 9deg;
+      --y: 9%;
+    }
+    .lp-fan a {
+      display: block;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 1rem;
+      background: #fff;
+      color: var(--ink);
+      text-decoration: none;
+      box-shadow: 0 2px 6px oklch(0.2 0.03 255 / 0.06), 0 22px 40px -24px oklch(0.2 0.03 255 / 0.5);
+      translate: 0 var(--y);
+      rotate: var(--r);
+      transition: transform 0.6s var(--ease), box-shadow 0.6s var(--ease);
+    }
+    /* Picked out of the hand, a card comes up and straightens a little. */
+    .lp-fan a:hover,
+    .lp-fan a:focus-visible {
+      transform: translateY(-1.25rem) rotate(calc(var(--r) * -0.5));
+      box-shadow: 0 2px 6px oklch(0.2 0.03 255 / 0.06), 0 34px 50px -26px oklch(0.2 0.03 255 / 0.55);
+    }
+    .lp-fan .lp-art {
+      aspect-ratio: 5 / 6;
+    }
+    .lp-fan span {
+      display: block;
+      padding: 0.55rem 0.8rem 0.7rem;
+      font-family: 'Spectral', Georgia, serif;
+      font-size: 1.1rem;
+      line-height: 1.3;
+    }
+  }
+
   .lp-designs {
     padding: clamp(3rem, 7vw, 6rem) clamp(1.25rem, 5vw, 4rem);
     border-top: 1px solid var(--line);
@@ -297,6 +409,7 @@ const services = [
     }
   }
   .lp-tile {
+    position: relative;
     overflow: hidden;
     border-radius: 1.25rem;
     border: 1px solid var(--line);
@@ -307,6 +420,11 @@ const services = [
   .lp-tile:hover {
     transform: translateY(-4px);
     box-shadow: 0 24px 48px -24px oklch(0.2 0.03 255 / 0.35);
+  }
+  /* Where a card in the hero lands: a little above its tile, so the tile arrives with air over it. */
+  .lp-anchor {
+    position: absolute;
+    top: -4rem;
   }
   .lp-art {
     aspect-ratio: 3 / 2;
@@ -367,18 +485,18 @@ const services = [
     translate: 5px 0;
   }
 
-  /* Each tile previews its direction's palette. */
-  .lp-tile-prestige {
+  /* Each tile, and each card in the hero, previews its direction's palette. */
+  [data-dir='prestige'] {
     --art-sky: oklch(0.36 0.1 22);
     --art-sun: oklch(0.84 0.09 190);
     --art-far: oklch(0.5 0.11 22);
     --art-near: oklch(0.15 0.05 22);
   }
   /* Drawn a little oversize, so a ridge the script has lifted never shows its foot. */
-  .lp-tile-prestige .lp-art svg {
+  [data-dir='prestige'] .lp-art svg {
     transform: scale(1.12);
   }
-  .lp-tile-warmth {
+  [data-dir='warmth'] {
     --art-bg: oklch(0.9 0.17 95);
     --art-1: oklch(0.3 0.09 335);
     --art-2: oklch(0.74 0.16 35);
@@ -386,14 +504,14 @@ const services = [
     --art-4: oklch(0.84 0.09 305);
     --art-5: oklch(0.99 0.005 95);
   }
-  .lp-tile-wow .lp-art {
+  [data-dir='wow'] .lp-art {
     background: #f4f4f0;
     --art-1: #1a5cf0;
     --art-2: #ff4577;
     --art-3: #ffd21f;
     --cv-font: 'Besley Variable', Georgia, serif;
   }
-  .lp-tile-calm {
+  [data-dir='calm'] {
     --art-1: oklch(0.965 0.014 250);
     --art-2: oklch(0.89 0.045 250);
     --art-3: oklch(0.83 0.055 250);
@@ -473,6 +591,17 @@ const services = [
     .lp-cta {
       animation-delay: 0.9s;
     }
+    /* The hand is dealt from the middle, one card after another. */
+    .lp-fan a {
+      animation: lp-deal 1.2s var(--ease) calc(0.5s + var(--i) * 110ms) backwards;
+    }
+    @keyframes lp-deal {
+      from {
+        opacity: 0;
+        translate: calc((1.5 - var(--i)) * 46%) 16%;
+        rotate: 0deg;
+      }
+    }
     @keyframes lp-up {
       from {
         translate: 0 130%;
@@ -490,21 +619,21 @@ const services = [
      * moved by src/scripts/landing.ts, which also marks a tile .is-live while it is on screen;
      * Warmth's cut-outs drift and Calm's water shimmers here.
      */
-    .lp-tile-warmth .art-piece {
+    [data-dir='warmth'] .art-piece {
       transform-box: fill-box;
       transform-origin: center;
     }
-    .lp-tile-warmth.is-live .art-piece {
+    [data-dir='warmth'].is-live .art-piece {
       animation: lp-drift calc(7s + var(--n) * 0.9s) ease-in-out calc(var(--n) * -1.7s) infinite alternate;
     }
-    .lp-tile-warmth.is-live .art-piece:nth-child(even) {
+    [data-dir='warmth'].is-live .art-piece:nth-child(even) {
       animation-direction: alternate-reverse;
     }
-    .lp-tile-calm .art-glint {
+    [data-dir='calm'] .art-glint {
       transform-box: fill-box;
       transform-origin: center;
     }
-    .lp-tile-calm.is-live .art-glint {
+    [data-dir='calm'].is-live .art-glint {
       animation: lp-glint calc(3.4s + var(--n) * 0.37s) ease-in-out calc(var(--n) * -0.9s) infinite;
     }
     @keyframes lp-drift {
@@ -561,26 +690,26 @@ const services = [
       scale: 1.14;
     }
     /* Wow's inks roll on one after another, and Warmth's cut-outs are dropped onto their ground. */
-    .lp-js .lp-tile-wow[data-rv] .lp-art text {
+    .lp-js [data-dir='wow'][data-rv] .lp-art text {
       transition: clip-path 0.9s cubic-bezier(0.45, 0, 0.2, 1) calc(var(--dl) + 0.1s);
     }
-    .lp-js .lp-tile-wow[data-rv] .lp-art text:nth-child(2) {
+    .lp-js [data-dir='wow'][data-rv] .lp-art text:nth-child(2) {
       transition-delay: calc(var(--dl) + 0.3s);
     }
-    .lp-js .lp-tile-wow[data-rv] .lp-art text:nth-child(3) {
+    .lp-js [data-dir='wow'][data-rv] .lp-art text:nth-child(3) {
       transition-delay: calc(var(--dl) + 0.5s);
     }
-    .lp-js .lp-tile-wow[data-rv]:not(.is-in) .lp-art text {
+    .lp-js [data-dir='wow'][data-rv]:not(.is-in) .lp-art text {
       clip-path: inset(-10% -10% 110% -10%);
     }
-    .lp-js .lp-tile-wow[data-rv].is-in .lp-art text {
+    .lp-js [data-dir='wow'][data-rv].is-in .lp-art text {
       clip-path: inset(-10%);
     }
-    .lp-js .lp-tile-warmth[data-rv] .art-piece {
+    .lp-js [data-dir='warmth'][data-rv] .art-piece {
       --pd: calc(var(--dl) + 0.25s + var(--n) * 60ms);
       transition: opacity 0.4s ease-out var(--pd), scale 0.8s var(--ease) var(--pd), rotate 0.8s var(--ease) var(--pd);
     }
-    .lp-js .lp-tile-warmth[data-rv]:not(.is-in) .art-piece {
+    .lp-js [data-dir='warmth'][data-rv]:not(.is-in) .art-piece {
       opacity: 0;
       scale: 1.4;
       rotate: 20deg;

@@ -7,9 +7,10 @@ gsap.registerPlugin(ScrollTrigger);
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 /*
- * Each tile on the landing page is its direction in miniature, and moves the way that direction
- * does: Prestige's ridges part by depth, Calm's sun rises with the scroll, and Wow's inks slip out
- * of register. Warmth's cut-outs drift in CSS (index.astro), since they follow nothing.
+ * Each tile on the landing page, and each card in the hero's hand, is its direction in miniature
+ * (`data-dir`) and moves the way that direction does: Prestige's ridges part by depth, Calm's sun
+ * rises with the scroll, and Wow's inks slip out of register. Warmth's cut-outs drift in CSS
+ * (index.astro), since they follow nothing.
  */
 
 /** How far the nearest ridge travels, as a share of the drawing's height (as in prestige.ts). */
@@ -96,7 +97,29 @@ function startInks(tile: HTMLElement) {
   });
 }
 
-/** The tiles only move while they are on screen. */
+/**
+ * The hand of cards in the hero leans with the pointer, the front card furthest, and opens a
+ * little wider as the page moves on.
+ */
+function startFan(root: HTMLElement) {
+  const hero = root.querySelector<HTMLElement>('.lp-hero');
+  const cards = [...root.querySelectorAll<HTMLElement>('.lp-fan li')];
+  if (!hero || !cards.length) return;
+  const lean = cards.map((card) => gsap.quickTo(card, 'x', { duration: 0.9, ease: 'power3' }));
+  hero.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    const pull = (e.clientX / window.innerWidth) * 2 - 1;
+    lean.forEach((to, i) => to(pull * (5 + i * 4)));
+  });
+  hero.addEventListener('pointerleave', () => lean.forEach((to) => to(0)));
+  const tl = gsap.timeline({
+    defaults: { ease: 'none' },
+    scrollTrigger: { trigger: hero, start: 0, end: 'bottom top', scrub: true },
+  });
+  cards.forEach((card, i) => tl.to(card, { y: -(16 + i * 16), rotation: (i - 1.5) * 3 }, 0));
+}
+
+/** The tiles and cards only move while they are on screen. */
 function watchTiles(tiles: NodeListOf<HTMLElement>) {
   const onScreen = new IntersectionObserver((entries) =>
     entries.forEach((e) => e.target.classList.toggle('is-live', e.isIntersecting)),
@@ -108,10 +131,11 @@ function init(root: HTMLElement) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!reduce) {
     startScroll(root);
-    watchTiles(root.querySelectorAll<HTMLElement>('.lp-tile'));
-    root.querySelectorAll<HTMLElement>('.lp-tile-prestige').forEach(startRidges);
-    root.querySelectorAll<HTMLElement>('.lp-tile-calm').forEach(startSun);
-    root.querySelectorAll<HTMLElement>('.lp-tile-wow').forEach(startInks);
+    watchTiles(root.querySelectorAll<HTMLElement>('[data-dir]'));
+    root.querySelectorAll<HTMLElement>("[data-dir='prestige']").forEach(startRidges);
+    root.querySelectorAll<HTMLElement>("[data-dir='calm']").forEach(startSun);
+    root.querySelectorAll<HTMLElement>("[data-dir='wow']").forEach(startInks);
+    startFan(root);
     startReveals(root);
   }
   root.classList.add('is-ready');
