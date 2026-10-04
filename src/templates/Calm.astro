@@ -4,7 +4,7 @@ import '@fontsource/spectral/300-italic.css';
 import '@fontsource/spectral/400.css';
 import '@fontsource-variable/public-sans/wght.css';
 import Base from '../layouts/Base.astro';
-import { horizon } from '../lib/art';
+import CalmScene from '../components/CalmScene.astro';
 import { toView } from '../lib/view';
 import type { Client } from '../schemas/client';
 
@@ -14,135 +14,197 @@ interface Props {
 const { client } = Astro.props;
 const v = toView(client);
 const s = client.slug;
+const teacher = client.archetype === 'teacher';
 
-const heroArt = horizon({ seed: `${s}-ca-hero`, motif: v.motif, w: 1600, h: 800 });
-const midArt = horizon({ seed: `${s}-ca-mid`, motif: v.motif, w: 1600, h: 560 });
-const endArt = horizon({ seed: `${s}-ca-end`, motif: v.motif, w: 1600, h: 560 });
+const path = [
+  ...v.education.map((c) => ({
+    when: String(c.year),
+    title: c.degree,
+    meta: [c.institution, c.location].filter(Boolean).join(', '),
+  })),
+  ...v.roles.map((r) => ({
+    when: v.period(r.startYear, r.endYear),
+    title: r.role,
+    meta: [r.institution, r.department].filter(Boolean).join(' · '),
+  })),
+];
 
-const work =
-  client.archetype === 'writer'
-    ? v.publications.map((p) => ({
-        title: p.title,
-        meta: `${v.typeLabel[p.type]}, ${p.venue}`,
-        year: String(p.year),
-      }))
-    : v.roles.flatMap((r) =>
-        r.courses.map((course) => ({
-          title: course,
-          meta: r.institution,
-          year: v.period(r.startYear, r.endYear),
-        })),
-      );
+const work = teacher
+  ? v.roles.flatMap((r) =>
+      r.courses.map((course) => ({
+        title: course,
+        meta: r.institution,
+        when: v.period(r.startYear, r.endYear),
+        url: undefined as string | undefined,
+      })),
+    )
+  : v.publications.map((p) => ({
+      title: p.title,
+      meta: `${v.typeLabel[p.type]}, ${p.venue}`,
+      when: String(p.year),
+      url: p.url,
+    }));
 
 const index = [
   ['#about', 'About'],
-  ['#path', 'Path'],
-  ['#work', v.workLabel],
+  ...(path.length ? [['#path', 'Path']] : []),
+  ...(work.length ? [['#work', v.workLabel]] : []),
   ['#contact', 'Contact'],
 ];
 ---
 
 <Base client={client} direction="calm" title={`${client.name} · ${v.role}`} themeColor="#f6f8fb">
-  <div class="ca">
+  <script is:inline>
+    // Hold the scroll reveals back until the script arrives; give the page back if it never does.
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.documentElement.classList.add('ca-js');
+      setTimeout(function () {
+        if (!document.querySelector('.ca.is-ready')) document.documentElement.classList.remove('ca-js');
+      }, 5000);
+    }
+  </script>
+
+  <div class="ca" data-motif={v.motif}>
     <div class="ca-progress" aria-hidden="true"></div>
 
     <header class="ca-top">
-      <a href="#top" class="ca-brand">{client.name}</a>
-      <nav aria-label="Main">
-        <ul>
-          {index.map(([href, label]) => <li><a href={href}>{label}</a></li>)}
-        </ul>
-      </nav>
+      <div class="ca-wrap">
+        <a href="#top" class="ca-brand">{client.name}</a>
+        <nav aria-label="Main">
+          <ul>
+            {index.map(([href, label]) => <li><a href={href}>{label}</a></li>)}
+          </ul>
+        </nav>
+      </div>
     </header>
 
     <section class="ca-hero" id="top">
-      <div class="ca-hero-art ca-par" aria-hidden="true" set:html={heroArt} />
-      <div class="ca-hero-copy">
-        <p class="ca-role">{v.role}{client.location && <> · {client.location}</>}</p>
-        <h1>{client.name}</h1>
-        <p class="ca-tagline">{client.tagline}</p>
+      <CalmScene seed={`${s}-ca-hero`} phase="dawn" />
+      <!-- The name stands on the horizon: what is above it sits in the sky, the rest on the water. -->
+      <div class="ca-hero-copy ca-wrap">
+        <div class="ca-hero-sky">
+          <p class="ca-role">{v.role}{client.location && <> · {client.location}</>}</p>
+          <h1>{client.name}</h1>
+        </div>
+        <div class="ca-hero-sea">
+          <p class="ca-tagline">{client.tagline}</p>
+          <p class="ca-links">
+            {work.length > 0 && (
+              <a href="#work">
+                See the {v.workLabel.toLowerCase()}
+                <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 2v11.5M3.5 9 8 13.5 12.5 9" /></svg>
+              </a>
+            )}
+            <a href="#contact">Get in touch</a>
+          </p>
+        </div>
       </div>
     </section>
 
-    <main class="ca-main">
-      <section class="ca-sec" id="about">
-        <h2 class="ca-rise">About</h2>
-        <p class="ca-bio ca-rise">{client.bio}</p>
-        <p class="ca-now ca-rise"><span>{v.nowLabel}</span> {v.nowLine}</p>
+    <main>
+      <section class="ca-sec ca-wrap" id="about" aria-labelledby="ca-about-h">
+        <h2 id="ca-about-h" data-rv="rise">About</h2>
+        <div class="ca-body">
+          <p class="ca-bio" data-rv="mist">{client.bio}</p>
+          <p class="ca-now" data-rv="row"><span>{v.nowLabel}</span> {v.nowLine}</p>
+        </div>
       </section>
 
-      <div class="ca-band ca-par" aria-hidden="true" set:html={midArt} />
+      <div class="ca-band"><CalmScene seed={`${s}-ca-mid`} phase="noon" boat /></div>
 
-      <section class="ca-sec" id="path">
-        <h2 class="ca-rise">Path</h2>
-        <ol class="ca-list">
-          {v.education.map((c) => (
-            <li class="ca-rise">
-              <span class="ca-when">{c.year}</span>
-              <div>
-                <h3>{c.degree}</h3>
-                <p>{[c.institution, c.location].filter(Boolean).join(', ')}</p>
-              </div>
-            </li>
-          ))}
-          {v.roles.map((r) => (
-            <li class="ca-rise">
-              <span class="ca-when">{v.period(r.startYear, r.endYear)}</span>
-              <div>
-                <h3>{r.role}</h3>
-                <p>{[r.institution, r.department].filter(Boolean).join(' · ')}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
+      {path.length > 0 && (
+        <section class="ca-sec ca-wrap" id="path" aria-labelledby="ca-path-h">
+          <h2 id="ca-path-h" data-rv="rise">Path</h2>
+          <ol class="ca-list ca-body">
+            {path.map((p) => (
+              <li data-rv="row">
+                <span class="ca-when">{p.when}</span>
+                <div>
+                  <h3>{p.title}</h3>
+                  <p>{p.meta}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
-      <section class="ca-sec" id="work">
-        <h2 class="ca-rise">{client.archetype === 'teacher' ? 'Courses' : 'Writing'}</h2>
-        <ol class="ca-list">
-          {work.map((w) => (
-            <li class="ca-rise">
-              <span class="ca-when">{w.year}</span>
-              <div>
-                <h3>{w.title}</h3>
-                <p>{w.meta}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
+      {work.length > 0 && (
+        <section class="ca-sec ca-wrap" id="work" aria-labelledby="ca-work-h">
+          <h2 id="ca-work-h" data-rv="rise">{teacher ? 'Courses' : 'Writing'}</h2>
+          <ol class="ca-list ca-body">
+            {work.map((w) => (
+              <li data-rv="row">
+                <span class="ca-when">{w.when}</span>
+                <div>
+                  <h3>{w.url ? <a href={w.url}>{w.title}</a> : w.title}</h3>
+                  <p>{w.meta}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
-      <div class="ca-band ca-par" aria-hidden="true" set:html={endArt} />
+      <div class="ca-band"><CalmScene seed={`${s}-ca-end`} phase="evening" /></div>
 
-      <section class="ca-sec" id="contact">
-        <h2 class="ca-rise">Contact</h2>
-        <p class="ca-bio ca-rise">
-          {client.archetype === 'teacher'
-            ? 'For speaking, consulting or collaboration, a short note is welcome.'
-            : 'For press, events or rights enquiries, a short note is welcome.'}
-        </p>
-        <!-- [TODO: form endpoint] No form service chosen yet; the form is inert in this demo. -->
-        <form class="ca-form ca-rise">
-          <label>Name<input type="text" name="name" autocomplete="name" /></label>
-          <label>Email<input type="email" name="email" autocomplete="email" /></label>
-          <label>Message<textarea name="message" rows="4"></textarea></label>
-          <button type="button" disabled>Send message</button>
-          <p>Demo only. The form is not connected on sample sites.</p>
-        </form>
+      <section class="ca-sec ca-wrap" id="contact" aria-labelledby="ca-contact-h">
+        <h2 id="ca-contact-h" data-rv="rise">Contact</h2>
+        <div class="ca-body">
+          <p class="ca-bio" data-rv="mist">
+            {teacher
+              ? 'For speaking, consulting or collaboration, a short note is welcome.'
+              : 'For press, events or rights enquiries, a short note is welcome.'}
+          </p>
+          <!-- [TODO: form endpoint] No form service chosen yet; the form is inert in this demo. -->
+          <form class="ca-form">
+            <label data-rv="rise">Name<input type="text" name="name" autocomplete="name" /></label>
+            <label data-rv="rise">Email<input type="email" name="email" autocomplete="email" /></label>
+            <label data-rv="rise">Message<textarea name="message" rows="4"></textarea></label>
+            <div class="ca-send" data-rv="rise">
+              <button type="button" disabled>Send message</button>
+              <p>Demo only. The form is not connected on sample sites.</p>
+            </div>
+          </form>
+        </div>
       </section>
     </main>
 
-    <footer class="ca-foot">
-      <span>© {new Date().getFullYear()} {client.name}</span>
-      <span>Sample site with fictional content, a demo by webdle.</span>
+    <footer class="ca-close">
+      <CalmScene seed={`${s}-ca-close`} phase="dusk" />
+      <div class="ca-foot ca-wrap">
+        <p>© {new Date().getFullYear()} {client.name}</p>
+        <p>Sample site with fictional content, a demo by webdle.</p>
+        <a href="#top">
+          Back to the top
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 14V2.5M3.5 7 8 2.5 12.5 7" /></svg>
+        </a>
+      </div>
     </footer>
   </div>
 </Base>
 
+<script>
+  import '../scripts/calm';
+</script>
+
 <style is:global>
+  /* The sun's intro dip, typed so a keyframe can move it. */
+  @property --dip {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 0;
+  }
+  /* How far down a paragraph the mist has lifted. */
+  @property --mist {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 100%;
+  }
+
   html[data-direction='calm'] {
-    scroll-behavior: smooth;
     background: oklch(0.985 0.004 250);
+    scrollbar-color: oklch(0.74 0.05 250) oklch(0.985 0.004 250);
   }
   .ca {
     --bg: oklch(0.985 0.004 250);
@@ -150,22 +212,26 @@ const index = [
     --muted: oklch(0.45 0.02 255);
     --line: oklch(0.88 0.01 255);
     --accent: oklch(0.45 0.09 250);
+    --deep: oklch(0.34 0.075 252);
+    --sun: oklch(0.995 0.006 250);
+    --pad: clamp(1.25rem, 5vw, 4rem);
     --ease: cubic-bezier(0.16, 1, 0.3, 1);
-    --art-1: oklch(0.965 0.014 250);
-    --art-2: oklch(0.89 0.045 250);
-    --art-3: oklch(0.83 0.055 250);
-    --art-4: oklch(0.62 0.08 250);
-    --art-sun: oklch(0.99 0.008 250);
+    /* The sun is larger for a teacher, as it was in the original drawings. */
+    --k: 1;
     font-family: 'Public Sans Variable', ui-sans-serif, system-ui, sans-serif;
     font-size: 1.0625rem;
     line-height: 1.75;
     color: var(--ink);
     background: var(--bg);
+    caret-color: var(--accent);
+    overflow-x: clip;
   }
-  .ca svg {
-    display: block;
-    width: 100%;
-    height: 100%;
+  .ca[data-motif='teacher'] {
+    --k: 1.35;
+  }
+  .ca ::selection {
+    background: oklch(0.86 0.055 250);
+    color: var(--ink);
   }
   .ca h1,
   .ca h2,
@@ -177,11 +243,17 @@ const index = [
     letter-spacing: -0.01em;
   }
   .ca a:focus-visible,
-  .ca button:focus-visible,
-  .ca input:focus-visible,
-  .ca textarea:focus-visible {
+  .ca button:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 4px;
+    border-radius: 2px;
+  }
+  .ca [tabindex='-1']:focus {
+    outline: none;
+  }
+  .ca-wrap {
+    width: min(100% - 2 * var(--pad), 68rem);
+    margin-inline: auto;
   }
   .ca-progress {
     position: fixed;
@@ -193,93 +265,301 @@ const index = [
     transform-origin: left;
   }
 
+  /* ---- header: rests on the sky, then travels with the page on its own ground ---- */
   .ca-top {
     position: absolute;
     inset: 0 0 auto 0;
-    z-index: 10;
+    z-index: 30;
+    padding-block: 0.85rem;
+    transition: background-color 0.5s, box-shadow 0.5s;
+  }
+  .ca.is-ready .ca-top {
+    position: fixed;
+  }
+  .ca.is-past .ca-top {
+    background: var(--bg);
+    box-shadow: 0 1px 0 var(--line);
+  }
+  .ca-top .ca-wrap {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    flex-wrap: wrap;
-    gap: 1rem;
-    padding: 1.75rem clamp(1.25rem, 5vw, 4rem);
+    gap: 0.25rem 1.5rem;
   }
   .ca-brand {
     font-family: 'Spectral', serif;
     font-size: 1.2rem;
     color: var(--ink);
     text-decoration: none;
+    padding-block: 0.4rem;
+    white-space: nowrap;
+    transition: opacity 0.5s, visibility 0.5s;
+  }
+  /* Over the hero the name is already on the horizon; the header's copy waits until that has gone. */
+  .ca.is-ready:not(.is-past) .ca-brand {
+    opacity: 0;
+    visibility: hidden;
   }
   .ca-top ul {
     display: flex;
-    gap: clamp(1rem, 3vw, 2rem);
+    gap: clamp(1rem, 3vw, 2.25rem);
     margin: 0;
     padding: 0;
     list-style: none;
     font-size: 0.95rem;
   }
-  .ca-top a {
+  .ca-top nav {
+    margin-left: auto;
+  }
+  .ca-top nav a {
+    position: relative;
+    display: block;
+    padding-block: 0.4rem;
     color: var(--muted);
     text-decoration: none;
     transition: color 0.4s;
   }
-  .ca-top a:hover {
+  .ca-top nav a::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0.3rem;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.6s var(--ease);
+  }
+  .ca-top nav a:hover,
+  .ca-top nav a[aria-current='true'] {
     color: var(--ink);
   }
+  .ca-top nav a:hover::after,
+  .ca-top nav a[aria-current='true']::after {
+    transform: scaleX(1);
+  }
 
-  .ca-hero {
+  /* ---- scenes: sky, a sun or moon, and its path on the water (CalmScene.astro) ---- */
+  .ca-scene {
+    --rule: oklch(0.62 0.08 250);
     position: relative;
-    min-height: 92svh;
-    display: grid;
-    align-items: end;
+    height: 100%;
     overflow: hidden;
     isolation: isolate;
   }
-  .ca-hero-art {
+  .ca-sky {
+    position: absolute;
+    inset: 0 0 auto;
+    height: var(--hz);
+    overflow: hidden;
+    background: linear-gradient(to bottom, var(--sky-top), var(--sky-low));
+  }
+  .ca-sun {
+    position: absolute;
+    left: var(--sx);
+    bottom: 0;
+    width: calc(var(--sd) * var(--k));
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--sun);
+    /* --rise is the share of the disc above the horizon; src/scripts/calm.ts moves it with the scroll. */
+    translate: -50% calc((1 - var(--rise) + var(--dip, 0)) * 100%);
+  }
+  .ca-boat {
+    position: absolute;
+    left: 61%;
+    bottom: 0;
+    width: auto;
+    height: clamp(0.85rem, 1.5vw, 1.3rem);
+    fill: var(--rule);
+  }
+  .ca-sea {
+    position: absolute;
+    inset: var(--hz) 0 0;
+    border-top: 1.5px solid var(--rule);
+    background: linear-gradient(
+      to bottom,
+      var(--sea),
+      color-mix(in oklab, var(--sea) 50%, var(--sea-end)) 48%,
+      var(--sea-end)
+    );
+  }
+  .ca-glints {
+    position: absolute;
+    inset: 0 auto 0 var(--sx);
+    width: calc(var(--sd) * var(--k) * 1.2);
+    translate: -50% 0;
+    mask-image: linear-gradient(to bottom, #000 30%, transparent 88%);
+  }
+  .ca-glints i {
+    position: absolute;
+    top: 0;
+    left: calc(50% + var(--x) * 100%);
+    width: calc(var(--w) * 100%);
+    height: max(1.5px, var(--sd) * var(--k) * var(--t));
+    border-radius: 99px;
+    background: var(--sun);
+    opacity: var(--o);
+    translate: -50% calc(var(--y) * var(--sd) * var(--k) * var(--spread, 1));
+  }
+  /* The four times of day. Each sky starts from the page and each sea returns to it, so a scene
+     gathers out of the paper rather than sitting on it as a stripe. Only the last one stays. */
+  .ca-scene-dawn {
+    --rise: 0.5;
+    --sd: clamp(6.5rem, 16vw, 14.5rem);
+    --sky-top: oklch(0.965 0.014 250);
+    --sky-low: oklch(0.89 0.045 250);
+    --sea: oklch(0.83 0.055 250);
+    --sea-end: var(--bg);
+  }
+  .ca-scene-noon {
+    --hz: 72%;
+    --rise: 1.5;
+    --sd: clamp(3.25rem, 7.5vw, 6.5rem);
+    --sky-top: var(--bg);
+    --sky-low: oklch(0.92 0.034 250);
+    --sea: oklch(0.86 0.047 250);
+    --sea-end: var(--bg);
+  }
+  .ca-scene-evening {
+    --hz: 58%;
+    --rise: 0.7;
+    --sd: clamp(4.5rem, 10vw, 8.5rem);
+    --sky-top: var(--bg);
+    --sky-low: oklch(0.84 0.06 252);
+    --sea: oklch(0.73 0.074 252);
+    --sea-end: var(--bg);
+    --rule: oklch(0.52 0.085 252);
+  }
+  .ca-scene-dusk {
+    --hz: 50%;
+    --rise: 1.3;
+    --sd: clamp(4rem, 9vw, 7.5rem);
+    --sea: var(--accent);
+    --sea-end: var(--deep);
+    --rule: var(--deep);
+  }
+  .ca-scene-dusk .ca-sky {
+    background: linear-gradient(to bottom, var(--bg), oklch(0.82 0.058 252) 45%, oklch(0.6 0.088 252));
+  }
+
+  /* ---- hero ---- */
+  .ca-hero {
+    --hz: 58%;
+    position: relative;
+    height: 100svh;
+    min-height: 36rem;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .ca-hero .ca-scene {
     position: absolute;
     inset: 0;
     z-index: -1;
   }
-  .ca-hero-art svg {
-    transform: scale(1.06);
-  }
   .ca-hero-copy {
-    padding: 8rem clamp(1.25rem, 5vw, 4rem) clamp(3.5rem, 8vw, 6rem);
-    max-width: 52rem;
+    position: absolute;
+    inset: 0;
     color: oklch(0.2 0.03 255);
   }
+  .ca-hero-sky {
+    position: absolute;
+    inset: auto 0 calc(100% - var(--hz));
+  }
+  .ca-hero-sea {
+    position: absolute;
+    inset: var(--hz) 0 auto;
+    padding-top: clamp(1.75rem, 4.5vh, 2.75rem);
+  }
   .ca-role {
-    margin: 0 0 1.25rem;
+    margin: 0 0 0.75rem;
     font-size: 1rem;
-    color: oklch(0.3 0.03 255);
+    color: oklch(0.32 0.035 255);
   }
   .ca-hero h1 {
-    font-size: clamp(2.75rem, 8vw, 5.5rem);
-    line-height: 1.02;
-    font-weight: 300;
+    font-size: clamp(3rem, 8.5vw, 6rem);
+    line-height: 1;
+    /* Spectral's baseline is 0.2em above the bottom of a solid line box: this sets it on the horizon. */
+    margin-bottom: -0.2em;
   }
   .ca-tagline {
-    margin: 1.5rem 0 0;
-    max-width: 34ch;
+    margin: 0;
+    max-width: 36ch;
     font-family: 'Spectral', serif;
     font-style: italic;
     font-weight: 300;
     font-size: clamp(1.3rem, 2.2vw, 1.7rem);
     line-height: 1.4;
+    text-wrap: balance;
+  }
+  .ca-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 2rem;
+    margin: clamp(1.25rem, 3vh, 2rem) 0 0;
+  }
+  .ca-links a,
+  .ca-foot a,
+  .ca-list a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.3em;
+    text-decoration-color: color-mix(in oklab, currentColor 35%, transparent);
+    transition: text-decoration-color 0.4s;
+  }
+  .ca-links a,
+  .ca-foot a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-block: 0.4rem;
+  }
+  .ca-links a:hover,
+  .ca-foot a:hover,
+  .ca-list a:hover {
+    text-decoration-color: currentColor;
+  }
+  .ca-links svg,
+  .ca-foot svg {
+    width: 1em;
+    height: 1em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.25;
+    transition: translate 0.6s var(--ease);
+  }
+  .ca-links a:hover svg {
+    translate: 0 0.2em;
+  }
+  .ca-foot a:hover svg {
+    translate: 0 -0.2em;
   }
 
-  .ca-main {
-    padding-inline: clamp(1.25rem, 5vw, 4rem);
-  }
+  /* ---- sections: the heading keeps its place in the margin while its section passes ---- */
   .ca-sec {
-    max-width: 44rem;
-    margin: 0 auto;
-    padding: clamp(5rem, 11vw, 9rem) 0;
+    padding-block: clamp(4.5rem, 10vw, 8rem);
   }
   .ca-sec h2 {
-    font-size: clamp(2rem, 4vw, 2.75rem);
-    margin-bottom: 2rem;
+    font-size: clamp(2rem, 3.6vw, 2.75rem);
+    line-height: 1.15;
+    margin-bottom: 1.75rem;
     color: var(--accent);
+  }
+  .ca-body {
+    max-width: 44rem;
+  }
+  @media (min-width: 60rem) {
+    .ca-sec {
+      display: grid;
+      grid-template-columns: 14rem minmax(0, 1fr);
+      column-gap: clamp(2rem, 6vw, 6rem);
+      align-items: start;
+    }
+    .ca-sec h2 {
+      position: sticky;
+      top: 5.5rem;
+      margin: -0.3rem 0 0;
+    }
   }
   .ca-bio {
     margin: 0;
@@ -289,9 +569,9 @@ const index = [
     text-wrap: pretty;
   }
   .ca-now {
+    position: relative;
     margin: 2.5rem 0 0;
     padding-top: 1.5rem;
-    border-top: 1px solid var(--line);
     color: var(--muted);
   }
   .ca-now span {
@@ -301,11 +581,6 @@ const index = [
 
   .ca-band {
     height: clamp(14rem, 34vw, 26rem);
-    margin-inline: calc(-1 * clamp(1.25rem, 5vw, 4rem));
-    overflow: hidden;
-  }
-  .ca-band svg {
-    transform: scale(1.08);
   }
 
   .ca-list {
@@ -314,14 +589,25 @@ const index = [
     padding: 0;
   }
   .ca-list li {
+    position: relative;
     display: grid;
-    grid-template-columns: 9rem minmax(0, 1fr);
+    grid-template-columns: 8rem minmax(0, 1fr);
     gap: 0.25rem 1.5rem;
     padding: 1.4rem 0;
-    border-top: 1px solid var(--line);
   }
-  .ca-list li:last-child {
-    border-bottom: 1px solid var(--line);
+  /* Rules between entries are drawn on, so they can be drawn in. */
+  .ca-list li::before,
+  .ca-list li:last-child::after,
+  .ca-now::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    background: var(--line);
+    transform-origin: left;
+  }
+  .ca-list li:last-child::after {
+    inset: auto 0 0;
   }
   .ca-when {
     color: var(--muted);
@@ -360,32 +646,80 @@ const index = [
     font-size: 1.1rem;
     color: var(--ink);
     border-radius: 0;
+    resize: vertical;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .ca-form input:hover,
+  .ca-form textarea:hover {
+    border-bottom-color: var(--ink);
+  }
+  .ca-form input:focus-visible,
+  .ca-form textarea:focus-visible {
+    outline: none;
+    border-bottom-color: var(--accent);
+    box-shadow: 0 1.5px 0 var(--accent);
+  }
+  .ca-send {
+    display: grid;
+    gap: 1rem;
+    justify-items: start;
+    margin-top: 0.5rem;
   }
   .ca-form button {
-    justify-self: start;
     padding: 0.8rem 1.6rem;
     border: 1px solid var(--accent);
     border-radius: 999px;
     background: transparent;
     color: var(--accent);
     font: inherit;
-    opacity: 0.55;
+    cursor: pointer;
+  }
+  .ca-form button:disabled {
+    border-style: dashed;
     cursor: not-allowed;
   }
-  .ca-form p {
+  .ca-send p {
     margin: 0;
     font-size: 0.9rem;
     color: var(--muted);
   }
+
+  /* ---- the close: the day ends, and the page with it ---- */
+  .ca-close {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    align-items: end;
+    min-height: clamp(24rem, 46vw, 34rem);
+    color: oklch(0.95 0.02 250);
+  }
+  .ca-close .ca-scene {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    height: auto;
+  }
+  /* A short column on the water, kept to the left so the moon's path never runs through it. */
   .ca-foot {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 0.5rem 2rem;
-    padding: 2rem clamp(1.25rem, 5vw, 4rem) 5rem;
-    border-top: 1px solid var(--line);
-    color: var(--muted);
+    display: grid;
+    justify-items: start;
+    gap: 0.15rem;
+    padding-block: 2rem 5.5rem;
     font-size: 0.9rem;
+  }
+  .ca-foot p {
+    margin: 0;
+    max-width: 30rem;
+  }
+  .ca-foot a {
+    margin-top: 0.6rem;
+  }
+  .ca-close a:focus-visible {
+    outline-color: currentColor;
+  }
+  .ca-close ::selection {
+    background: oklch(0.95 0.02 250);
+    color: var(--deep);
   }
 
   @media (max-width: 40rem) {
@@ -393,61 +727,137 @@ const index = [
       grid-template-columns: 1fr;
     }
     .ca-top ul {
-      gap: 0.9rem;
-      font-size: 0.875rem;
+      gap: 1.1rem;
+      font-size: 0.9rem;
+    }
+    /* The links take the row; the name is one tap away at the top of the page. */
+    .ca-brand {
+      display: none;
+    }
+    .ca-top nav {
+      margin-inline: 0 auto;
+    }
+    /* Narrow screens: the sun and moon keep to the right edge so their paths clear the copy. */
+    .ca[data-motif='teacher'] {
+      --k: 1.15;
+    }
+    .ca-hero .ca-scene {
+      --sx: 85% !important;
+    }
+    .ca-tagline {
+      max-width: 15rem;
+    }
+    .ca-close {
+      min-height: 31rem;
+    }
+    .ca-scene-dusk {
+      --hz: 44%;
+      --sx: 82% !important;
+    }
+    .ca-foot p {
+      max-width: 15rem;
     }
   }
 
   /* ---- motion: slow and quiet, always an enhancement ---- */
   @media (prefers-reduced-motion: no-preference) {
-    .ca-hero-copy > * {
-      animation: ca-in 1.6s var(--ease) backwards;
+    html[data-direction='calm']:not(.lenis) {
+      scroll-behavior: smooth;
     }
-    .ca-hero-copy h1 {
+
+    /* Arrival: the sun comes up behind the name and the copy settles in after it. */
+    .ca-hero .ca-sun {
+      animation: ca-dawn 3.2s var(--ease) backwards;
+    }
+    .ca-hero .ca-glints {
+      animation: ca-clear 2.4s ease-out 0.9s backwards;
+    }
+    .ca-hero-sky > *,
+    .ca-hero-sea > * {
+      animation: ca-in 1.8s var(--ease) backwards;
+    }
+    .ca-hero h1 {
       animation-delay: 0.15s;
     }
-    .ca-hero-copy .ca-tagline {
-      animation-delay: 0.35s;
+    .ca-tagline {
+      animation-delay: 0.4s;
+    }
+    .ca-links {
+      animation-delay: 0.6s;
+    }
+    @keyframes ca-dawn {
+      from {
+        --dip: 0.42;
+      }
+    }
+    @keyframes ca-clear {
+      from {
+        opacity: 0;
+      }
     }
     @keyframes ca-in {
       from {
         opacity: 0;
-        transform: translateY(12px);
+        translate: 0 0.75rem;
       }
     }
-    @supports (animation-timeline: view()) {
-      .ca-rise {
-        animation: ca-rise ease-out both;
-        animation-timeline: view();
-        animation-range: entry 0% entry 45%;
+
+    /* The water is never quite still while its scene is on screen. */
+    .ca-scene.is-live .ca-glints i {
+      animation: ca-glint var(--beat) ease-in-out var(--wait) infinite;
+    }
+    @keyframes ca-glint {
+      50% {
+        opacity: calc(var(--o) * 0.4);
+        scale: 0.8 1;
       }
-      .ca-par svg {
-        animation: ca-par linear both;
-        animation-timeline: view();
-      }
-      .ca-progress {
-        animation: ca-progress linear both;
-        animation-timeline: scroll(root);
-      }
-      @keyframes ca-rise {
-        from {
-          opacity: 0;
-          transform: translateY(14px);
-        }
-      }
-      @keyframes ca-par {
-        from {
-          transform: translateY(-4%) scale(1.08);
-        }
-        to {
-          transform: translateY(4%) scale(1.08);
-        }
-      }
-      @keyframes ca-progress {
-        to {
-          transform: scaleX(1);
-        }
-      }
+    }
+
+    /*
+     * Scroll reveals, held back only while html.ca-js says the script is on its way. Headings and
+     * fields clear out of a haze, a paragraph has the mist lift down it, and a list entry has its
+     * rule drawn before its text arrives.
+     */
+    .ca-js .ca [data-rv] {
+      --dl: calc(var(--d, 0) * 110ms);
+    }
+    .ca-js .ca [data-rv='rise'] {
+      transition: opacity 1.2s var(--ease) var(--dl), filter 1.2s var(--ease) var(--dl),
+        translate 1.2s var(--ease) var(--dl);
+    }
+    .ca-js .ca [data-rv='rise']:not(.is-in) {
+      opacity: 0;
+      filter: blur(6px);
+      translate: 0 0.75rem;
+    }
+    .ca-js .ca [data-rv='mist'] {
+      mask-image: linear-gradient(to bottom, #000 calc(var(--mist) * 1.5 - 50%), transparent calc(var(--mist) * 1.5));
+      transition: --mist 2.4s cubic-bezier(0.3, 0, 0.2, 1) var(--dl), opacity 0.8s var(--dl);
+    }
+    .ca-js .ca [data-rv='mist']:not(.is-in) {
+      --mist: 0%;
+      opacity: 0;
+    }
+    .ca-js .ca [data-rv='row']::before,
+    .ca-js .ca [data-rv='row']::after {
+      transition: transform 1.5s var(--ease) var(--dl);
+    }
+    .ca-js .ca [data-rv='row'] > *,
+    .ca-js .ca-now[data-rv='row'] {
+      transition: opacity 1.2s var(--ease) calc(var(--dl) + 0.2s), translate 1.2s var(--ease) calc(var(--dl) + 0.2s),
+        color 1.2s calc(var(--dl) + 0.2s);
+    }
+    .ca-js .ca [data-rv='row']:not(.is-in)::before,
+    .ca-js .ca [data-rv='row']:not(.is-in)::after {
+      transform: scaleX(0);
+    }
+    .ca-js .ca [data-rv='row']:not(.is-in) > * {
+      opacity: 0;
+      translate: 0 0.6rem;
+    }
+    /* This line's rule is its own, so only its text waits. */
+    .ca-js .ca-now[data-rv='row']:not(.is-in) {
+      color: transparent;
     }
   }
 </style>

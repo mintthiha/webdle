@@ -105,11 +105,13 @@ webdle/
 │   │   └── art.ts               # seeded generative SVG art (no stock photos)
 │   ├── layouts/Base.astro       # html shell, JSON-LD, demo switcher
 │   ├── components/DemoSwitcher.astro
+│   ├── components/CalmScene.astro  # Calm only: one layered horizon (sky, sun, path on the water)
 │   ├── templates/               # one full design per direction
 │   │   ├── Prestige.astro  Warmth.astro  Wow.astro  Calm.astro
 │   │   └── index.ts             # direction -> template map
 │   ├── scripts/wow.ts           # Wow only: poster fitting, scroll (GSAP ScrollTrigger + Lenis)
 │   ├── scripts/wow-press.ts     # Wow only: WebGL2 ink renderer (three plates, overprint, grain)
+│   ├── scripts/calm.ts          # Calm only: the sun follows the scroll (GSAP ScrollTrigger + Lenis)
 │   └── pages/
 │       ├── index.astro          # webdle landing page / demo showcase
 │       └── [direction]/[client].astro
@@ -175,7 +177,7 @@ Four full designs, one per feeling a prospect should have. All render the same c
 | Prestige | Credibility, gravitas | Oxblood, arched plates, engraved rosettes, Bodoni Moda | Scroll-linked parallax, drawn rules (CSS scroll timelines) |
 | Warmth | Warmth, personality | Sunny yellow, paper-cut collage, rounded sticker UI, Bricolage Grotesque | Floating blob, marquee, rotating badge, soft reveals |
 | Wow | Cutting-edge, bold | Wood-type broadside in three transparent inks (yellow, pink, blue) that overprint; Besley and League Gothic fitted to the measure | WebGL2 press: ink rolls on as you scroll, plates slip out of register with pointer and scroll speed, scroll pushes into the pink to reach the bio, the pointer pulls the inks apart where it hovers, rules and type arrive with the ink, a tape of course or publication titles runs sideways on scroll, "Print it again" re-deals the inks |
-| Calm | Calm, focused | Cool off-white, horizon scenes, Spectral | Slow fades, reading-progress hairline |
+| Calm | Calm, focused | Cool off-white, four horizon scenes from dawn to dusk, the name standing on the first horizon, Spectral | The day passes with the scroll: the sun rises behind the name, stands high over the first band, sets in the second, and the moon comes up at the foot of the page; its path on the water shimmers; headings clear out of a haze, mist lifts down paragraphs, list rules are drawn in; reading-progress hairline |
 
 Imagery is generated vector art (`src/lib/art.ts`), so there are no stock-photo licences or real
 people's likenesses. Real client photos can replace it later. Every animation is an enhancement over

@@ -1,0 +1,51 @@
+---
+import { rng } from '../lib/art';
+
+/*
+ * One still horizon for the Calm direction: sky, a sun or moon, and its path on the water. It is
+ * built from layers rather than drawn as one picture so the horizon sits at an exact height (type
+ * can stand on it) and src/scripts/calm.ts can move the sun as the page scrolls. Colours, the
+ * horizon height and the sun's resting place come from the `.ca-scene-<phase>` rules in Calm.astro.
+ */
+interface Props {
+  seed: string;
+  phase: 'dawn' | 'noon' | 'evening' | 'dusk';
+  boat?: boolean;
+}
+const { seed, phase, boat = false } = Astro.props;
+const r = rng(seed);
+
+/** Where the sun stands along the horizon, in percent: east at dawn, west by evening. */
+const AT = { dawn: 72, noon: 42, evening: 24, dusk: 70 };
+const sx = AT[phase] + (r() - 0.5) * 6;
+
+/* Glints: y, width and thickness are in sun diameters, so the path scales with the sun. */
+const glints = Array.from({ length: 13 }, (_, i) => ({
+  y: (6 + i * i * 1.6 + i * 3) / 208,
+  w: ((1.6 - i * 0.07) * (0.6 + r() * 0.8)) / 2.4,
+  x: (r() - 0.5) * 0.08,
+  t: 0.007 + i * 0.0012,
+  o: 0.78 - i * 0.045,
+  beat: 5 + r() * 5,
+  wait: -r() * 10,
+}));
+const n = (v: number) => v.toFixed(3);
+---
+
+<div class={`ca-scene ca-scene-${phase}`} data-scene={phase} style={`--sx:${sx.toFixed(1)}%`} aria-hidden="true">
+  <div class="ca-sky">
+    <span class="ca-sun"></span>
+    {boat && (
+      <svg class="ca-boat" viewBox="0 0 72 70" focusable="false">
+        <path d="M37 0 70 60H37ZM31 12V60H2ZM0 63H72L65 70H7Z" />
+      </svg>
+    )}
+  </div>
+  <div class="ca-sea">
+    <div class="ca-glints">
+      {glints.map((g) => (
+        <i style={`--y:${n(g.y)};--w:${n(g.w)};--x:${n(g.x)};--t:${g.t.toFixed(4)};--o:${n(g.o)};--beat:${g.beat.toFixed(1)}s;--wait:${g.wait.toFixed(1)}s`} />
+      ))}
+    </div>
+  </div>
+</div>
