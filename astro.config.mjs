@@ -1,9 +1,9 @@
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 
-// [TODO: site] set to the real deployed URL; required for sitemap, canonical URLs and link previews.
-// Until it is written here, SITE_URL=https://... in the build environment does the same.
+// The deployed URL: canonical links and link previews are built from it. SITE_URL=https://... in the
+// build environment overrides it, for a staging or preview deploy at another address.
 export default defineConfig({
-  site: process.env.SITE_URL || undefined,
+  site: process.env.SITE_URL || 'https://webdle.ca',
   vite: { plugins: [tailwindcss()] },
 });

@@ -11,6 +11,8 @@ import { classic, directions } from '../lib/view';
 import { landscape, collage, overprint, horizon, marble } from '../lib/art';
 
 const clients = getClients();
+/** Who a prospect writes to. There is no form service yet, so the landing page links to this address. */
+const contact = { name: 'Thiha Min Thein', email: 'mintthiha@gmail.com' };
 const title = 'webdle · Personal websites for teachers and writers';
 const description =
   'webdle builds personal websites for teachers and writers, so the first thing people find when they search your name is you.';
@@ -111,7 +113,10 @@ const services = [
     <div class="lp">
       <header class="lp-top">
         <a class="lp-mark" href="/">webdle</a>
-        <a class="lp-jump" href="#designs">See the designs</a>
+        <nav class="lp-nav" aria-label="On this page">
+          <a class="lp-jump" href="#designs">See the designs</a>
+          <a class="lp-jump" href="#contact">Get in touch</a>
+        </nav>
       </header>
 
       <section class="lp-hero">
@@ -217,7 +222,20 @@ const services = [
           Search results depend on many factors outside anyone's control, so we do not promise
           specific rankings or timelines.
         </p>
-        <!-- [TODO: webdle contact link or form] -->
+      </section>
+
+      <section class="lp-contact" id="contact" aria-labelledby="lp-contact-h">
+        <div>
+          <h2 id="lp-contact-h" data-rv="up">Want a site like these?</h2>
+          <p data-rv="rise">
+            webdle is run by {contact.name}. Send a few lines about who you are and what you teach or
+            write, and we can talk through what your site should be.
+          </p>
+        </div>
+        <a class="lp-mail" data-rv="rise" href={`mailto:${contact.email}?subject=${encodeURIComponent('A website from webdle')}`}>
+          {contact.email}
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" /></svg>
+        </a>
       </section>
 
       <footer class="lp-foot">© {new Date().getFullYear()} webdle</footer>
@@ -287,6 +305,10 @@ const services = [
     font-size: 1.5rem;
     color: var(--ink);
     text-decoration: none;
+  }
+  .lp-nav {
+    display: flex;
+    gap: clamp(1rem, 3vw, 2rem);
   }
   .lp-jump {
     color: var(--accent);
@@ -437,7 +459,8 @@ const services = [
     margin-bottom: 3rem;
   }
   .lp-head h2,
-  .lp-services h2 {
+  .lp-services h2,
+  .lp-contact h2 {
     font-size: clamp(2rem, 4vw, 3rem);
     line-height: 1.15;
   }
@@ -686,6 +709,58 @@ const services = [
     max-width: 40rem;
     font-size: 0.95rem;
     color: var(--muted);
+  }
+  .lp-contact {
+    padding: clamp(4rem, 8vw, 7rem) clamp(1.25rem, 5vw, 4rem);
+    border-top: 1px solid var(--line);
+  }
+  .lp-contact p {
+    margin: 1rem 0 0;
+    max-width: 38rem;
+    color: var(--muted);
+  }
+  /* The address is written out, so it can be copied by anyone whose browser has no mail app. */
+  .lp-mail {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5em;
+    margin-top: 2rem;
+    font-family: 'Spectral', Georgia, serif;
+    font-weight: 300;
+    font-size: clamp(1.5rem, 4vw, 2.75rem);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    color: var(--ink);
+    text-decoration: underline 1px var(--line);
+    text-underline-offset: 0.22em;
+    transition: color 0.3s, text-decoration-color 0.3s;
+  }
+  .lp-mail svg {
+    align-self: center;
+    width: 0.6em;
+    height: 0.6em;
+    color: var(--accent);
+    transition: translate 0.5s var(--ease);
+  }
+  .lp-mail:hover {
+    color: var(--accent);
+    text-decoration-color: currentColor;
+  }
+  .lp-mail:hover svg {
+    translate: 0.2em 0;
+  }
+  /* Wide screens: the question keeps the left edge and the address answers it from the right. */
+  @media (min-width: 64rem) {
+    .lp-contact {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 4rem;
+    }
+    .lp-mail {
+      margin-top: 0;
+      font-size: clamp(2.5rem, 3.4vw, 3.75rem);
+    }
   }
   .lp-foot {
     padding: 2rem clamp(1.25rem, 5vw, 4rem) 3rem;

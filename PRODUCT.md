@@ -22,7 +22,7 @@ Static Astro 7 + Tailwind 4 site, client content in typed config files validated
 - Content must come from structured client config; nothing in a real client site is invented.
 - Demo personas are fictional (`jane-teacher`, `john-writer`); no real people's photos or likenesses.
 - Imagery approach confirmed: generated, original visuals (SVG/CSS art, textures, typography-as-image). No stock photos for now (licensing).
-- Contact form is not connected (no form service chosen); landing page contact link is undecided.
+- Contact forms on the sample sites are not connected (no form service chosen). The landing page's contact is an email link to the owner, Thiha Min Thein (`contact` in `src/pages/index.astro`).
 - No rankings, traffic or timeline promises anywhere in copy.
 
 ## Brand Commitments

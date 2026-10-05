@@ -82,8 +82,8 @@ rename; superseded now that the name is settled.)
 
 ### Business name
 
-**`webdle`** — decided. **[CHECK]** confirm domain availability and that the name
-is not already taken/trademarked before public launch.
+**`webdle`** — decided. Domain: **`webdle.ca`** (given by the owner 2026-10-04). **[CHECK]**
+confirm the name is not already taken/trademarked before public launch.
 
 ---
 
@@ -169,6 +169,11 @@ Original options, kept for reference:
 - `/classic/<client>/`, `/classic/<client>/about/`, `/work/`, `/contact/` — the multi-page sample (built 2026-10-04)
 - `/404.html` — shown for any address that does not exist (built 2026-10-04)
 
+**Contact (built 2026-10-04).** The landing page ends with a contact section (`/#contact`): the
+owner's name and an email link, set in `contact` at the top of `src/pages/index.astro`. The header
+links to it, and so does the demo switcher on every sample page. It is a `mailto:` link with the
+address written out, not a form; the sample sites' own forms stay inert.
+
 **Link previews (built 2026-10-04).** Every page carries Open Graph and Twitter card tags
 (`src/components/ShareTags.astro`). The landing page and each `/<direction>/<client>/` has its own
 1200x630 picture in `public/og/`; the Classic sub-pages share their Home picture. Sample pages say
@@ -177,9 +182,11 @@ changing a design or adding a client: it builds, photographs the top of each pag
 or Chrome (`scripts/og.mjs`, no extra dependencies) and writes the pictures to `public/og/` and
 `dist/og/`.
 
-**[TODO]** Link previews need absolute URLs. Until `site` is set (in `astro.config.mjs`, or
-`SITE_URL=https://...` in the build environment) the image and page addresses are root-relative,
-which most apps will not follow, and no canonical link is written.
+Link previews need absolute URLs, which come from `site` in `astro.config.mjs`
+(`https://webdle.ca`, set 2026-10-04). A deploy at any other address, such as a staging or preview
+URL, should be built with `SITE_URL=https://...` so its previews and canonical links point at
+itself. **[CHECK]** the previews have not been tried in a real messaging app yet; that needs the
+site live at its address.
 
 **[TODO] Production (per client):** the original plan below is not built. The demo
 single-page layout may be fine for real clients, or they may want separate pages for SEO.
@@ -236,7 +243,7 @@ JavaScript off and with reduced motion on all 8 pages).
 | Framework | Astro | `^7.3.5` | Updated from README draft (`^4.15.0`); installed 2026-10-03 |
 | Styling | Tailwind | `^4.3.3` | v4 via `@tailwindcss/vite` plugin (no tailwind.config) |
 | Tailwind integration | `@tailwindcss/vite` | `^4.3.3` | Replaces `@astrojs/tailwind`, which is for Tailwind 3 |
-| Sitemap | `@astrojs/sitemap` | not installed | [TODO] add once the real `site` URL is known |
+| Sitemap | `@astrojs/sitemap` | not installed | [TODO] `site` is now set (`https://webdle.ca`), so this can be added |
 | Validation | Zod | `^4.6.5` | Schema uses `z.url()` (Zod 4) |
 | Script runner | `tsx` | not installed | [TODO] add when `scripts/*.ts` exist. `scripts/og.mjs` is plain Node and does not need it |
 | Animation | `gsap` (ScrollTrigger) | `^3.15.0` | All four directions. **[CHECK]** confirm GSAP's current licence terms before commercial use |
