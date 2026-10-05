@@ -29,7 +29,7 @@ Static Astro 7 + Tailwind 4 site, client content in typed config files validated
 Business name: webdle. Binding visual constraints volunteered by the user: build four distinct design directions, one each for prestige and credibility, warmth and personality, "wow" cutting-edge, and calm and focused; steer toward soft and human, and editorial and literary looks.
 
 ## Evidence on Hand
-No real clients, testimonials, case studies, press, or photography exist. Do not fabricate any. Only the two fictional sample configs in `clients/`.
+No real clients, testimonials, case studies, press, or photography exist. Do not fabricate any. Only the two fictional sample configs in `clients/`, whose people, places, schools, publishers and titles are all invented and labelled as fictional on every page.
 
 ## Product Principles
 1. Show, don't claim: the demos are the pitch, so they must look like finished sites a client would be proud of.

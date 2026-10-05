@@ -71,7 +71,7 @@ These rules are enforced in code via Zod schemas (see §6).
 | Build model | **Per-client build** | `dist/[slug]/` per client, deployed to that client's domain |
 | Contact form | **`[TODO: form endpoint]`** | Placeholder until service chosen (Formspree / Web3Forms / etc.) |
 | Deployment | **POC on own Linux server**, production TBD | `dist/[slug]/` is a plain static folder |
-| Fake personas | **Two:** `jane-teacher`, `john-writer` | Placeholder-shaped content only, not plausible-fake |
+| Fake personas | **Two:** `jane-teacher`, `john-writer` | Changed 2026-10-04: the content now reads like a finished site (was placeholder-shaped). The names Jane Teacher and John Writer stay obviously fictional; the town, schools, publishers and titles are invented and were searched for to avoid matching real ones; every page still says it is a sample with fictional content. Both are set in Canada (Larkmere, Ontario and Tidewick, Nova Scotia), so schools, degrees, grades and spelling follow Canadian usage. Search again before adding an invented name |
 | Team plan | **Solo now, PMs later, dev steps away from code** | Drives multi-tenant + config-driven choices |
 
 ### Repo name
