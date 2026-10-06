@@ -124,7 +124,7 @@ webdle/
 │       ├── classic/[client]/[...page].astro   # multi-page sample: /classic/<client>/, /about/, /work/, /contact/
 │       └── 404.astro            # "no page at this address", in the landing page's look
 ├── public/
-│   ├── robots.txt               # allows everything
+│   ├── robots.txt               # allows everything; sample pages opt out with a noindex tag (Base.astro)
 │   └── og/                      # link-preview images, made by `npm run og`
 ├── scripts/og.mjs               # photographs the top of each built page into public/og/
 ├── PRODUCT.md                   # product context for design tooling

@@ -34,6 +34,8 @@ const design = [...directions, classic].find((d) => d.slug === direction)!.name;
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
     <meta name="description" content={client.tagline} />
+    {/* Sample sites are about fictional people, so search engines are asked to leave them out. */}
+    <meta name="robots" content="noindex" />
     <ShareTags
       title={title}
       description={`A sample site by webdle with fictional content, in the ${design} design. ${client.tagline}`}
