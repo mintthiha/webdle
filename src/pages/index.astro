@@ -9,10 +9,9 @@ import ShareTags from '../components/ShareTags.astro';
 import { getClients } from '../lib/clients';
 import { classic, directions } from '../lib/view';
 import { landscape, collage, overprint, horizon, marble } from '../lib/art';
+import { contact } from '../lib/contact';
 
 const clients = getClients();
-/** Who a prospect writes to. There is no form service yet, so the landing page links to this address. */
-const contact = { name: 'Thiha Min Thein', email: 'mintthiha@gmail.com' };
 const title = 'webdle · Personal websites for teachers and writers';
 const description =
   'webdle builds personal websites for teachers and writers, so the first thing people find when they search your name is you.';
@@ -115,7 +114,7 @@ const services = [
         <a class="lp-mark" href="/">webdle</a>
         <nav class="lp-nav" aria-label="On this page">
           <a class="lp-jump" href="#designs">See the designs</a>
-          <a class="lp-jump" href="#contact">Get in touch</a>
+          <a class="lp-jump" href="/contact/">Get in touch</a>
         </nav>
       </header>
 
@@ -232,8 +231,8 @@ const services = [
             write, and we can talk through what your site should be.
           </p>
         </div>
-        <a class="lp-mail" data-rv="rise" href={`mailto:${contact.email}?subject=${encodeURIComponent('A website from webdle')}`}>
-          {contact.email}
+        <a class="lp-mail" data-rv="rise" href="/contact/">
+          Get in touch
           <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" /></svg>
         </a>
       </section>
@@ -719,7 +718,7 @@ const services = [
     max-width: 38rem;
     color: var(--muted);
   }
-  /* The address is written out, so it can be copied by anyone whose browser has no mail app. */
+  /* The large link out to /contact/, where the form and the written-out address are. */
   .lp-mail {
     display: inline-flex;
     align-items: baseline;

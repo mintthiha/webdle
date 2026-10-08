@@ -69,7 +69,7 @@ These rules are enforced in code via Zod schemas (see §6).
 | CMS | **Deferred** | Add when 3–5 clients create edit-request load, or when first PM is hired |
 | Domain strategy | **`clientname.com`** per client | Fallbacks: `.net`, `.co`, positioning domain |
 | Build model | **Per-client build** | `dist/[slug]/` per client, deployed to that client's domain |
-| Contact form | **`[TODO: form endpoint]`** | Placeholder until service chosen (Formspree / Web3Forms / etc.) |
+| Contact form | **Web3Forms** (webdle.ca `/contact/`) | Posts to api.web3forms.com; key in `src/lib/contact.ts`. Client-site forms: endpoint still TODO |
 | Deployment | **POC on own Linux server**, production TBD | `dist/[slug]/` is a plain static folder |
 | Fake personas | **Two:** `jane-teacher`, `john-writer` | Changed 2026-10-04: the content now reads like a finished site (was placeholder-shaped). The names Jane Teacher and John Writer stay obviously fictional; the town, schools, publishers and titles are invented and were searched for to avoid matching real ones; every page still says it is a sample with fictional content. Both are set in Canada (Larkmere, Ontario and Tidewick, Nova Scotia), so schools, degrees, grades and spelling follow Canadian usage. Search again before adding an invented name |
 | Team plan | **Solo now, PMs later, dev steps away from code** | Drives multi-tenant + config-driven choices |
@@ -169,10 +169,7 @@ Original options, kept for reference:
 - `/classic/<client>/`, `/classic/<client>/about/`, `/work/`, `/contact/` — the multi-page sample (built 2026-10-04)
 - `/404.html` — shown for any address that does not exist (built 2026-10-04)
 
-**Contact (built 2026-10-04).** The landing page ends with a contact section (`/#contact`): the
-owner's name and an email link, set in `contact` at the top of `src/pages/index.astro`. The header
-links to it, and so does the demo switcher on every sample page. It is a `mailto:` link with the
-address written out, not a form; the sample sites' own forms stay inert.
+**Contact (built 2026-10-07).** `/contact/` (`src/pages/contact.astro`) is a short form (name, email, teacher / writer / other, message) sent through Web3Forms to the owner's inbox, with the email address written out beside it. The owner's name, address and the Web3Forms access key are set in `src/lib/contact.ts`; the key is public by design. While the key is empty the page shows the address alone and no form. The form has a honeypot field and posts without JavaScript too. The landing page header, its contact section and the demo switcher on every sample page link to `/contact/`; the sample sites' own forms stay inert.
 
 **Link previews (built 2026-10-04).** Every page carries Open Graph and Twitter card tags
 (`src/components/ShareTags.astro`). The landing page and each `/<direction>/<client>/` has its own

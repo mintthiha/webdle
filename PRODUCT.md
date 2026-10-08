@@ -22,7 +22,7 @@ Static Astro 7 + Tailwind 4 site, client content in typed config files validated
 - Content must come from structured client config; nothing in a real client site is invented.
 - Demo personas are fictional (`jane-teacher`, `john-writer`); no real people's photos or likenesses.
 - Imagery approach confirmed: generated, original visuals (SVG/CSS art, textures, typography-as-image). No stock photos for now (licensing).
-- Contact forms on the sample sites are not connected (no form service chosen). The landing page's contact is an email link to the owner, Thiha Min Thein (`contact` in `src/pages/index.astro`).
+- Contact forms on the sample sites are not connected (no endpoint). webdle's own contact page is `/contact/`: a Web3Forms form plus the owner's email (Thiha Min Thein), configured in `src/lib/contact.ts`.
 - No rankings, traffic or timeline promises anywhere in copy.
 
 ## Brand Commitments
