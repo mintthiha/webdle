@@ -287,8 +287,10 @@ export function collage(opts: { seed: string; w?: number; h?: number }) {
     }
     out += `<g class="art-piece" style="--n:${i}">${shape}</g>`;
   });
-  const defs = `<defs><filter id="${id}" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="${hashString(opts.seed) % 100}"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0"/></filter></defs>`;
-  out += `<rect width="${W}" height="${H}" filter="url(#${id})" opacity="0.35" style="mix-blend-mode:multiply"/>`;
+  // Grain is a tiled picture (public/grain.png, scripts/grain.mjs), not an feTurbulence filter: the
+  // cut-outs drift, so the drawing is repainted every frame and a filter would be run every time.
+  const defs = `<defs><pattern id="${id}" width="128" height="128" patternUnits="userSpaceOnUse"><image href="/grain.png" width="128" height="128"/></pattern></defs>`;
+  out += `<rect width="${W}" height="${H}" fill="url(#${id})" opacity="0.35" style="mix-blend-mode:multiply"/>`;
   return svg(W, H, defs + out);
 }
 

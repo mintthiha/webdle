@@ -858,7 +858,7 @@ const services = [
     /*
      * Scroll reveals, held back only while html.lp-js says the script is on its way
      * (src/scripts/landing.ts adds .is-in). Headings rise from behind their baseline as the
-     * headline does, a tile comes up while its picture settles into the frame, and each service
+     * headline does, a tile comes up, and each service
      * has its rule drawn before its text arrives.
      */
     .lp-js .lp [data-rv] {
@@ -883,15 +883,9 @@ const services = [
       transition: opacity 0.9s var(--ease) var(--dl), translate 1.3s var(--ease) var(--dl),
         transform 0.6s var(--ease), box-shadow 0.6s var(--ease);
     }
-    .lp-js .lp [data-rv='tile'] .lp-art svg {
-      transition: scale 1.8s var(--ease) var(--dl);
-    }
     .lp-js .lp [data-rv='tile']:not(.is-in) {
       opacity: 0;
       translate: 0 2.5rem;
-    }
-    .lp-js .lp [data-rv='tile']:not(.is-in) .lp-art svg {
-      scale: 1.14;
     }
     /* Wow's inks roll on one after another, and Warmth's cut-outs are dropped onto their ground. */
     .lp-js [data-dir='wow'][data-rv] .lp-art text {
