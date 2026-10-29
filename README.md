@@ -108,6 +108,7 @@ webdle/
 │   ├── components/DemoSwitcher.astro
 │   ├── components/SearchPreview.astro  # demo bar "In Google" panel: the search listing + what the JSON-LD says
 │   ├── components/ClassicCV.astro  # Classic only: the CV page (one printable sheet; print styles keep just the sheet)
+│   ├── components/ClassicBook.astro  # Classic only: a book's own page (cover, description, stores, excerpt, praise placeholder)
 │   ├── components/CalmScene.astro  # Calm only: one layered horizon (sky, sun, path on the water)
 │   ├── components/ShareTags.astro  # link-preview tags (Open Graph, Twitter card, canonical) for every page
 │   ├── templates/               # one full design per direction
@@ -125,6 +126,7 @@ webdle/
 │       ├── index.astro          # webdle landing page / demo showcase
 │       ├── [direction]/[client].astro
 │       ├── classic/[client]/[...page].astro   # multi-page sample: /classic/<client>/, /about/, /work/, /contact/, /cv/
+│       ├── classic/[client]/books/[book].astro  # one page per book with a `page` in its config
 │       └── 404.astro            # "no page at this address", in the landing page's look
 ├── public/
 │   ├── robots.txt               # allows everything; sample pages opt out with a noindex tag (Base.astro)

@@ -29,13 +29,41 @@ const TeachingRoleSchema = z.object({
   courses: z.array(z.string()).default([]),
 });
 
-const PublicationSchema = z.object({
-  title: z.string().min(1),
-  venue: z.string().min(1),
-  year: z.number().int().min(1900).max(2100),
+const StoreSchema = z.object({
+  name: z.string().min(2),
+  /** Absent = not connected yet: shown as an inactive button with a note saying so. */
   url: z.url().optional(),
-  type: z.enum(['book', 'article', 'essay', 'story', 'chapter']),
 });
+
+const PraiseSchema = z.object({
+  quote: z.string().min(10),
+  /** Who said it, as they are credited (person, publication, or both). */
+  source: z.string().min(2),
+  url: z.url().optional(),
+});
+
+/** A book's own page (/books/<slug>/ on the client's site). */
+const BookPageSchema = z.object({
+  slug: z.string().regex(/^[a-z0-9-]+$/, 'book slug must be lowercase letters, numbers, hyphens only'),
+  /** Paragraphs, as the client approves them (jacket copy or their own words). */
+  description: z.array(z.string().min(40)).min(1),
+  /** Paragraphs from the book, used with the publisher's permission. */
+  excerpt: z.array(z.string().min(40)).default([]),
+  stores: z.array(StoreSchema).default([]),
+  /** Real, checked quotes only, each with its source. Empty shows a placeholder, never an invented quote. */
+  praise: z.array(PraiseSchema).default([]),
+});
+
+const PublicationSchema = z
+  .object({
+    title: z.string().min(1),
+    venue: z.string().min(1),
+    year: z.number().int().min(1900).max(2100),
+    url: z.url().optional(),
+    type: z.enum(['book', 'article', 'essay', 'story', 'chapter']),
+    page: BookPageSchema.optional(),
+  })
+  .refine((p) => !p.page || p.type === 'book', { message: 'only a book can have its own page', path: ['page'] });
 
 export const TeacherSchema = z.object({
   ...CommonFields,
@@ -66,3 +94,4 @@ export type Writer = z.infer<typeof WriterSchema>;
 export type Credential = z.infer<typeof CredentialSchema>;
 export type TeachingRole = z.infer<typeof TeachingRoleSchema>;
 export type Publication = z.infer<typeof PublicationSchema>;
+export type BookPage = z.infer<typeof BookPageSchema>;

@@ -5,13 +5,16 @@ import Base from '../layouts/Base.astro';
 import ClassicCV from '../components/ClassicCV.astro';
 import { cover, landscape, marble, rosette } from '../lib/art';
 import { toView, type ClassicPage } from '../lib/view';
-import type { Client } from '../schemas/client';
+import type { Client, Publication } from '../schemas/client';
+import ClassicBook from '../components/ClassicBook.astro';
 
 interface Props {
   client: Client;
   page: ClassicPage;
+  /** The book, on a `book` page. */
+  book?: Publication;
 }
-const { client, page } = Astro.props;
+const { client, page, book } = Astro.props;
 const v = toView(client);
 const s = client.slug;
 const teacher = client.archetype === 'teacher';
@@ -23,7 +26,9 @@ const nav = [
   { page: 'work', href: `${base}work/`, label: v.workLabel },
   { page: 'contact', href: `${base}contact/`, label: 'Contact' },
 ];
-const titles = { home: v.role, about: 'About', work: v.workLabel, contact: 'Contact', cv: 'CV' };
+const titles = { home: v.role, about: 'About', work: v.workLabel, contact: 'Contact', cv: 'CV', book: book?.title ?? '' };
+/** Pages outside the menu mark the menu page they belong under. */
+const navPage = page === 'book' ? 'work' : page === 'cv' ? 'about' : page;
 
 /** The endpaper: cream and sage grounds, veined in the page's own cloth green and gilt (--pine, --gilt). */
 const endpaper = marble({
@@ -46,12 +51,14 @@ const pubs = v.publications.map((p, i) => ({
   art: cover({ title: p.title, sub: `${p.venue}, ${p.year}`, seed: `${s}-cl-${p.title}`, kind: (i + 1) % 4 }),
   cloth: `--cv-bg:${cloths[i % 3][0]};--cv-ink:${cloths[i % 3][1]}`,
   meta: `${v.typeLabel[p.type]} · ${p.venue}, ${p.year}`,
+  /** The book's own page on this site, if it has one. */
+  page: p.page ? `${base}books/${p.page.slug}/` : undefined,
 }));
 const seal = rosette({ seed: `${s}-cl-seal`, rings: 30 });
 const record = v.education.length > 0 || v.roles.length > 0;
 ---
 
-<Base client={client} direction="classic" title={`${client.name} · ${titles[page]}`} themeColor="#2f5a48">
+<Base client={client} direction="classic" title={`${client.name} · ${titles[page]}`} themeColor="#2f5a48" description={book?.page?.description[0]}>
   <script is:inline>
     // Hold the scroll reveals back until the script arrives; give the page back if it never does.
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -85,9 +92,9 @@ const record = v.education.length > 0 || v.roles.length > 0;
         <ul>
           {nav.map((n) => (
             <li>
-              <a href={n.href} data-turn aria-current={n.page === page ? 'page' : undefined}>
+              <a href={n.href} data-turn aria-current={n.page === page ? 'page' : n.page === navPage ? 'true' : undefined}>
                 {n.label}
-                {n.page === page && <span class="cl-mark" />}
+                {n.page === navPage && <span class="cl-mark" />}
               </a>
             </li>
           ))}
@@ -146,7 +153,7 @@ const record = v.education.length > 0 || v.roles.length > 0;
                   {pubs.slice(0, 3).map((p) => (
                     <li data-rv="rise">
                       <div class="cl-cover" style={p.cloth} aria-hidden="true" set:html={p.art} />
-                      <strong>{p.title}</strong>
+                      {p.page ? <a class="cl-link" href={p.page} data-turn><strong>{p.title}</strong></a> : <strong>{p.title}</strong>}
                       <span>{p.meta}</span>
                     </li>
                   ))}
@@ -238,7 +245,11 @@ const record = v.education.length > 0 || v.roles.length > 0;
                 <div>
                   <h2 data-rv="up">{pubs[0].title}</h2>
                   <p class="cl-meta" data-rv="rise">{pubs[0].meta}</p>
-                  {pubs[0].url && <a class="cl-btn" href={pubs[0].url} data-rv="rise">Read it</a>}
+                  {pubs[0].page ? (
+                    <a class="cl-btn" href={pubs[0].page} data-turn data-rv="rise">About the book</a>
+                  ) : (
+                    pubs[0].url && <a class="cl-btn" href={pubs[0].url} data-rv="rise">Read it</a>
+                  )}
                 </div>
               </div>
             </section>
@@ -271,7 +282,13 @@ const record = v.education.length > 0 || v.roles.length > 0;
                     <li data-rv="row">
                       <div class="cl-cover" style={p.cloth} aria-hidden="true" set:html={p.art} />
                       <div>
-                        {p.url ? <a href={p.url}><strong>{p.title}</strong></a> : <strong>{p.title}</strong>}
+                        {p.page ? (
+                          <a href={p.page} data-turn><strong>{p.title}</strong></a>
+                        ) : p.url ? (
+                          <a href={p.url}><strong>{p.title}</strong></a>
+                        ) : (
+                          <strong>{p.title}</strong>
+                        )}
                         <span>{p.meta}</span>
                       </div>
                     </li>
@@ -314,6 +331,9 @@ const record = v.education.length > 0 || v.roles.length > 0;
         </>
       )}
       {page === 'cv' && <ClassicCV client={client} endpaper={endpaper} />}
+      {page === 'book' && book && (
+        <ClassicBook book={book} cover={pubs.find((p) => p.title === book.title)!} back={`${base}work/`} />
+      )}
     </main>
 
     <footer class="cl-foot">

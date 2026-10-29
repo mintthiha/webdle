@@ -1,0 +1,248 @@
+---
+/**
+ * The Classic site's page for one book: cover, description and where to buy it, then an excerpt and
+ * praise. Store buttons without a link are shown inactive with a note, and praise is a marked
+ * placeholder until the config has real, sourced quotes; neither is ever filled with an invention.
+ */
+import type { Publication } from '../schemas/client';
+
+interface Props {
+  book: Publication;
+  /** The cover art, cloth and meta line, as the Classic template draws them for its book lists. */
+  cover: { art: string; cloth: string; meta: string };
+  /** The page listing all the writing. */
+  back: string;
+}
+const { book, cover, back } = Astro.props;
+const page = book.page!;
+const unlinked = page.stores.some((s) => !s.url);
+---
+
+<section class="cl-section cl-book">
+  <div class="cl-wrap">
+    <a class="cl-book-back" href={back} data-turn>
+      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M13.5 8h-11M7 3.5 2.5 8 7 12.5" /></svg>
+      All writing
+    </a>
+  </div>
+  <div class="cl-wrap cl-book-grid">
+    <div class="cl-cover" style={cover.cloth} aria-hidden="true" data-rv="plate" set:html={cover.art} />
+    <div>
+      <h1 data-rv="up">{book.title}</h1>
+      <p class="cl-meta" data-rv="rise">{cover.meta}</p>
+      {page.description.map((para) => <p class="cl-book-desc" data-rv="rise">{para}</p>)}
+
+      {page.stores.length > 0 && (
+        <div class="cl-book-buy" data-rv="rise">
+          <h2>Buy the book</h2>
+          <ul>
+            {page.stores.map((s) => (
+              <li>
+                {s.url ? (
+                  <a class="cl-btn" href={s.url} rel="noopener">{s.name}</a>
+                ) : (
+                  <button class="cl-btn cl-btn-off" type="button" disabled>{s.name}</button>
+                )}
+              </li>
+            ))}
+          </ul>
+          {unlinked && <p class="cl-book-note">Demo only. Store links are not connected on sample sites.</p>}
+        </div>
+      )}
+    </div>
+  </div>
+</section>
+
+{page.excerpt.length > 0 && (
+  <section class="cl-section cl-excerpt" aria-labelledby="cl-excerpt-h">
+    <div class="cl-wrap">
+      <h2 id="cl-excerpt-h" data-rv="up">From <strong>the book</strong></h2>
+      <div class="cl-excerpt-text" data-rv="rise">
+        {page.excerpt.map((para) => <p>{para}</p>)}
+      </div>
+    </div>
+  </section>
+)}
+
+<section class="cl-section cl-praise" aria-labelledby="cl-praise-h">
+  <div class="cl-wrap">
+    <h2 id="cl-praise-h" data-rv="up">Praise</h2>
+    {page.praise.length > 0 ? (
+      <div class="cl-praise-grid">
+        {page.praise.map((q) => (
+          <figure data-rv="rise">
+            <blockquote><p>{q.quote}</p></blockquote>
+            <figcaption>{q.url ? <a class="cl-link" href={q.url}>{q.source}</a> : q.source}</figcaption>
+          </figure>
+        ))}
+      </div>
+    ) : (
+      <div class="cl-praise-empty" data-rv="rise">
+        <p><strong>Praise goes here.</strong></p>
+        <p>
+          Quotes from reviews and other writers are added once each one is checked against its source,
+          so nothing on the page is made up.
+        </p>
+      </div>
+    )}
+  </div>
+</section>
+
+<style is:global>
+  .cl-book-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 21rem) minmax(0, 1fr);
+    gap: clamp(2rem, 7vw, 6rem);
+    align-items: start;
+  }
+  .cl-book-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+    color: var(--pine);
+    text-decoration: none;
+  }
+  .cl .cl-book-back svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: translate 0.4s var(--ease);
+  }
+  .cl-book-back:hover svg {
+    translate: -3px 0;
+  }
+  .cl-book h1 {
+    font-size: clamp(2.7rem, 5.4vw, 4.5rem);
+  }
+  .cl-book-desc {
+    max-width: 38rem;
+    margin: 1.5rem 0 0;
+    text-wrap: pretty;
+  }
+  .cl-book-desc + .cl-book-desc {
+    margin-top: 1rem;
+  }
+  .cl-book-buy {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+  }
+  .cl .cl-book-buy h2 {
+    margin-bottom: 1rem;
+    color: var(--pine);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .cl-book-buy ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cl-btn.cl-btn-off {
+    border: 0;
+    background: var(--sage);
+    color: var(--muted);
+    font: inherit;
+    font-weight: 700;
+    cursor: not-allowed;
+  }
+  .cl-btn.cl-btn-off:hover {
+    translate: none;
+  }
+  .cl-book-note {
+    margin: 0.85rem 0 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  /* ---- excerpt: a page set on sage, opening with a gilt initial ---- */
+  .cl-excerpt {
+    background: var(--sage);
+  }
+  .cl-excerpt h2 {
+    text-align: center;
+  }
+  .cl-excerpt-text {
+    max-width: 36rem;
+    margin: 2.5rem auto 0;
+    font-size: 1.25rem;
+    line-height: 1.75;
+  }
+  .cl-excerpt-text p {
+    margin: 0;
+    text-wrap: pretty;
+  }
+  .cl-excerpt-text p + p {
+    text-indent: 1.5em;
+  }
+  .cl-excerpt-text p:first-child::first-letter {
+    float: left;
+    margin: 0.08em 0.12em 0 0;
+    color: var(--pine);
+    font-size: 4.1em;
+    font-weight: 800;
+    line-height: 0.8;
+  }
+
+  /* ---- praise ---- */
+  .cl-praise h2 {
+    margin-bottom: 2rem;
+  }
+  .cl-praise-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: 2rem 3rem;
+  }
+  .cl-praise-grid figure {
+    margin: 0;
+    padding-left: 1.25rem;
+    border-left: 3px solid var(--gilt);
+  }
+  .cl-praise-grid blockquote {
+    margin: 0;
+    font-size: 1.3rem;
+    font-style: italic;
+  }
+  .cl-praise-grid blockquote p {
+    margin: 0;
+  }
+  .cl-praise-grid figcaption {
+    margin-top: 0.75rem;
+    color: var(--muted);
+  }
+  .cl-praise-empty {
+    max-width: 40rem;
+    padding: 1.5rem 1.75rem;
+    border: 1.5px dashed var(--line);
+    border-radius: 0.5rem;
+    color: var(--muted);
+  }
+  .cl-praise-empty p {
+    margin: 0;
+  }
+  .cl-praise-empty p + p {
+    margin-top: 0.4rem;
+  }
+  .cl-praise-empty strong {
+    color: var(--ink);
+  }
+
+  @media (max-width: 56rem) {
+    .cl-book-grid {
+      grid-template-columns: 1fr;
+    }
+    .cl-book .cl-cover {
+      max-width: 15rem;
+    }
+  }
+</style>

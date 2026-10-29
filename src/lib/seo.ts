@@ -59,7 +59,8 @@ export function searchData(client: Client) {
     author: { '@id': personId },
     datePublished: String(p.year),
     ...venue(p),
-    ...(p.url && { url: p.url }),
+    ...(p.page && { description: p.page.description[0], url: `${site}/books/${p.page.slug}/` }),
+    ...(!p.page && p.url && { url: p.url }),
   }));
 
   const jsonLd = {

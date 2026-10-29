@@ -40,7 +40,8 @@ export const classic = {
 } as const;
 /** `cv` is not in the site's menu; the About page links to it. */
 export const classicPages = ['home', 'about', 'work', 'contact', 'cv'] as const;
-export type ClassicPage = (typeof classicPages)[number];
+/** Plus `book`: one page per book that has a `page` in the config, at /classic/<client>/books/<slug>/. */
+export type ClassicPage = (typeof classicPages)[number] | 'book';
 
 export type DirectionSlug = (typeof directions)[number]['slug'] | typeof classic.slug;
 

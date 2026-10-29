@@ -14,8 +14,12 @@ interface Props {
   title: string;
   /** The page's address on the client's own site, e.g. "/" or "/about/". */
   path: string;
+  /** The page's meta description. */
+  description: string;
 }
-const { client, title, path } = Astro.props;
+const { client, title, path, description } = Astro.props;
+/** Results pages cut long descriptions short at about this length. */
+const snippet = description.length > 160 ? `${description.slice(0, 157).replace(/\s+\S*$/, '')} …` : description;
 const { jsonLd, facts, host } = searchData(client);
 const crumbs = path.split('/').filter(Boolean);
 const initials = client.name
@@ -65,7 +69,7 @@ const first = client.name.split(' ')[0];
             </span>
           </div>
           <p class="sp-title">{title}</p>
-          <p class="sp-desc">{client.tagline}</p>
+          <p class="sp-desc">{snippet}</p>
         </div>
       </div>
     </section>

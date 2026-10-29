@@ -12,9 +12,11 @@ interface Props {
   direction: DirectionSlug;
   title: string;
   themeColor: string;
+  /** The meta description; defaults to the tagline. */
+  description?: string;
 }
 
-const { client, direction, title, themeColor } = Astro.props;
+const { client, direction, title, themeColor, description = client.tagline } = Astro.props;
 
 const { jsonLd } = searchData(client);
 /** This page's address on the client's own site: /classic/jane-teacher/about/ is /about/ there. */
@@ -30,7 +32,7 @@ const design = [...directions, classic].find((d) => d.slug === direction)!.name;
     <meta name="theme-color" content={themeColor} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
-    <meta name="description" content={client.tagline} />
+    <meta name="description" content={description} />
     {/* Sample sites are about fictional people, so search engines are asked to leave them out. */}
     <meta name="robots" content="noindex" />
     <ShareTags
@@ -72,7 +74,7 @@ const design = [...directions, classic].find((d) => d.slug === direction)!.name;
   <body>
     <slot />
     <DemoSwitcher clientSlug={client.slug} current={direction}>
-      <SearchPreview client={client} title={title} path={sitePath} />
+      <SearchPreview client={client} title={title} description={description} path={sitePath} />
     </DemoSwitcher>
   </body>
 </html>

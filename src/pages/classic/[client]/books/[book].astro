@@ -1,0 +1,18 @@
+---
+import { getClients } from '../../../../lib/clients';
+import Classic from '../../../../templates/Classic.astro';
+import type { Client, Publication } from '../../../../schemas/client';
+
+/** One page per book that has a `page` in its client's config: /classic/<client>/books/<slug>/. */
+export function getStaticPaths() {
+  return getClients().flatMap((client) =>
+    client.publications
+      .filter((p) => p.page)
+      .map((book) => ({ params: { client: client.slug, book: book.page!.slug }, props: { client, book } })),
+  );
+}
+
+const { client, book } = Astro.props as { client: Client; book: Publication };
+---
+
+<Classic client={client} page="book" book={book} />
