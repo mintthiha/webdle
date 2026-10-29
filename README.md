@@ -102,9 +102,11 @@ webdle/
 │   ├── lib/
 │   │   ├── clients.ts           # loads + validates every clients/*/config.ts
 │   │   ├── view.ts              # direction registry + per-client view model
+│   │   ├── seo.ts               # JSON-LD + the same facts in plain words (one source for both)
 │   │   └── art.ts               # seeded generative SVG art (no stock photos)
 │   ├── layouts/Base.astro       # html shell, JSON-LD, demo switcher
 │   ├── components/DemoSwitcher.astro
+│   ├── components/SearchPreview.astro  # demo bar "In Google" panel: the search listing + what the JSON-LD says
 │   ├── components/CalmScene.astro  # Calm only: one layered horizon (sky, sun, path on the water)
 │   ├── components/ShareTags.astro  # link-preview tags (Open Graph, Twitter card, canonical) for every page
 │   ├── templates/               # one full design per direction
