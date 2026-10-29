@@ -7,7 +7,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "og": "astro build && node scripts/og.mjs"
+    "og": "astro build && node scripts/og.mjs",
+    "cv": "astro build && node scripts/cv.mjs"
   },
   "dependencies": {
     "@fontsource-variable/alegreya": "^5.3.0",

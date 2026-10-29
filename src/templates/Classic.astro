@@ -2,6 +2,7 @@
 import '@fontsource-variable/alegreya/wght.css';
 import '@fontsource-variable/alegreya/wght-italic.css';
 import Base from '../layouts/Base.astro';
+import ClassicCV from '../components/ClassicCV.astro';
 import { cover, landscape, marble, rosette } from '../lib/art';
 import { toView, type ClassicPage } from '../lib/view';
 import type { Client } from '../schemas/client';
@@ -22,7 +23,7 @@ const nav = [
   { page: 'work', href: `${base}work/`, label: v.workLabel },
   { page: 'contact', href: `${base}contact/`, label: 'Contact' },
 ];
-const titles = { home: v.role, about: 'About', work: v.workLabel, contact: 'Contact' };
+const titles = { home: v.role, about: 'About', work: v.workLabel, contact: 'Contact', cv: 'CV' };
 
 /** The endpaper: cream and sage grounds, veined in the page's own cloth green and gilt (--pine, --gilt). */
 const endpaper = marble({
@@ -167,6 +168,7 @@ const record = v.education.length > 0 || v.roles.length > 0;
               <h1 data-rv="up">Bio <strong>and credentials</strong></h1>
               <p class="cl-bio" data-rv="rise">{client.bio}</p>
               <p class="cl-now cl-now-ink" data-rv="rise"><span>{v.nowLabel}</span> {v.nowLine}</p>
+              <p class="cl-about-cv" data-rv="rise"><a class="cl-btn" href={`${base}cv/`} data-turn>View and download CV</a></p>
             </div>
           </section>
 
@@ -311,6 +313,7 @@ const record = v.education.length > 0 || v.roles.length > 0;
           </section>
         </>
       )}
+      {page === 'cv' && <ClassicCV client={client} endpaper={endpaper} />}
     </main>
 
     <footer class="cl-foot">
@@ -730,6 +733,9 @@ const record = v.education.length > 0 || v.roles.length > 0;
   }
   .cl-about-copy h1 strong {
     display: block;
+  }
+  .cl-about-cv {
+    margin: 2rem 0 0;
   }
   .cl-bio {
     margin: 2rem 0 0;

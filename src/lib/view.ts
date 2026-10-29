@@ -38,7 +38,8 @@ export const classic = {
   feeling: 'A whole site, page by page',
   blurb: 'Home, About, work and Contact as separate pages, bound like a book: green cloth, gilt and marbled endpapers.',
 } as const;
-export const classicPages = ['home', 'about', 'work', 'contact'] as const;
+/** `cv` is not in the site's menu; the About page links to it. */
+export const classicPages = ['home', 'about', 'work', 'contact', 'cv'] as const;
 export type ClassicPage = (typeof classicPages)[number];
 
 export type DirectionSlug = (typeof directions)[number]['slug'] | typeof classic.slug;

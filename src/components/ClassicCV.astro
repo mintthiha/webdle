@@ -1,0 +1,255 @@
+---
+/**
+ * The Classic site's CV page: the record from the client config set as one printed sheet. On screen
+ * it sits under the usual page head with Download and Print; printed (or saved as the PDF that
+ * scripts/cv.mjs makes into public/cv/), only the sheet is kept. Nothing here is not in the config.
+ */
+import type { Client } from '../schemas/client';
+import { toView } from '../lib/view';
+
+interface Props {
+  client: Client;
+  /** The endpaper art for the page-head strip, shared with the other Classic pages. */
+  endpaper: string;
+}
+const { client, endpaper } = Astro.props;
+const v = toView(client);
+const teacher = client.archetype === 'teacher';
+const [first, ...rest] = client.name.split(' ');
+const host = new URL(client.domain).host;
+const jobTitle = v.current?.role ?? v.role;
+
+// Publications are cited as a reference list would: books in italics, shorter work in quotation marks.
+type Block = 'teaching' | 'education' | 'publications';
+const order: Block[] = teacher ? ['teaching', 'education', 'publications'] : ['publications', 'education', 'teaching'];
+const has = { teaching: v.roles.length > 0, education: v.education.length > 0, publications: v.publications.length > 0 };
+const heading = { teaching: 'Teaching experience', education: 'Education', publications: 'Publications' };
+---
+
+<section class="cl-head cl-cv-intro">
+  <div class="cl-strip" aria-hidden="true"><div class="cl-paper" set:html={endpaper} /></div>
+  <div class="cl-wrap">
+    <h1 data-rv="up">Curriculum <strong>vitae</strong></h1>
+    <p data-rv="rise">
+      {teacher ? 'Teaching, education and writing' : 'Writing and education'} on one page, ready to
+      download or print.
+    </p>
+    <div class="cl-cv-actions" data-rv="rise">
+      <a class="cl-btn" href={`/cv/${client.slug}.pdf`} download={`${client.name} CV.pdf`}>Download PDF</a>
+      <button class="cl-btn cl-btn-line" type="button" data-print>Print</button>
+    </div>
+  </div>
+</section>
+
+<section class="cl-section cl-cv">
+  <div class="cl-wrap">
+    <article class="cl-cv-sheet" aria-label={`CV of ${client.name}`}>
+      <header class="cl-cv-top">
+        <h2>{first} <strong>{rest.join(' ')}</strong></h2>
+        <p>{[jobTitle, client.location, host].filter(Boolean).map((part, i) => <>{i > 0 && ' · '}<span>{part}</span></>)}</p>
+      </header>
+      <p class="cl-cv-profile">{client.tagline}</p>
+
+      {order.filter((b) => has[b]).map((b) => (
+        <section class="cl-cv-part">
+          <h3>{heading[b]}</h3>
+          {b === 'teaching' &&
+            v.roles.map((r) => (
+              <div class="cl-cv-row">
+                <p class="cl-cv-when">{v.period(r.startYear, r.endYear)}</p>
+                <div>
+                  <p><strong>{r.role}</strong>, {[r.institution, r.department].filter(Boolean).join(', ')}</p>
+                  {r.courses.length > 0 && <p class="cl-cv-more">Courses: {r.courses.join(', ')}</p>}
+                </div>
+              </div>
+            ))}
+          {b === 'education' &&
+            v.education.map((c) => (
+              <div class="cl-cv-row">
+                <p class="cl-cv-when">{c.year}</p>
+                <div>
+                  <p><strong>{c.degree}</strong></p>
+                  <p class="cl-cv-more">{[c.institution, c.location].filter(Boolean).join(', ')}</p>
+                </div>
+              </div>
+            ))}
+          {b === 'publications' &&
+            v.publications.map((p) => (
+              <div class="cl-cv-row">
+                <p class="cl-cv-when">{p.year}</p>
+                <div>
+                  <p>{p.type === 'book' ? <><em>{p.title}</em>.</> : <>“{p.title}.”</>} {p.venue}.</p>
+                  <p class="cl-cv-more">{v.typeLabel[p.type]}</p>
+                </div>
+              </div>
+            ))}
+        </section>
+      ))}
+
+      <p class="cl-cv-foot">Sample CV with fictional content, a demo by webdle.</p>
+    </article>
+  </div>
+</section>
+
+<script>
+  document.querySelector('[data-print]')?.addEventListener('click', () => window.print());
+</script>
+
+<style is:global>
+  .cl-cv-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+  .cl-btn.cl-btn-line {
+    border: 0;
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--pine);
+    color: var(--pine);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .cl-btn.cl-btn-line:hover {
+    background: var(--sage);
+  }
+
+  /* ---- the sheet: a page of good paper, ruled in gilt ---- */
+  .cl-cv-sheet {
+    max-width: 52rem;
+    padding: clamp(1.5rem, 6vw, 4.5rem) clamp(1.25rem, 6vw, 4.5rem) clamp(1.5rem, 4vw, 3rem);
+    border: 1px solid var(--line);
+    border-top: 0.4rem solid var(--pine);
+    border-radius: 0.25rem;
+    background: #fff;
+    box-shadow: 0 30px 60px -40px rgb(13 32 25 / 0.45);
+    font-size: 1.05rem;
+    line-height: 1.5;
+  }
+  .cl .cl-cv-top h2 {
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+  }
+  .cl-cv-top p {
+    margin: 0.6rem 0 0;
+    color: var(--muted);
+  }
+  /* Each part of the line (role, place, web address) wraps whole, never mid-word. */
+  .cl-cv-top p span {
+    white-space: nowrap;
+  }
+  .cl-cv-profile {
+    margin: 1.5rem 0 0;
+    padding-top: 1.25rem;
+    border-top: 2px solid var(--gilt);
+    font-size: 1.15rem;
+    font-style: italic;
+  }
+  .cl-cv-part {
+    margin-top: 2.25rem;
+  }
+  .cl .cl-cv-part h3 {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    color: var(--pine);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .cl-cv-part h3::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+  .cl-cv-row {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: 0 1.25rem;
+    padding: 0.45rem 0;
+  }
+  .cl-cv-row p {
+    margin: 0;
+  }
+  .cl-cv-when {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .cl-cv-more {
+    color: var(--muted);
+    font-size: 0.95em;
+  }
+  .cl-cv-foot {
+    margin: 2.5rem 0 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  @media (max-width: 34rem) {
+    .cl-cv-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* ---- printed: the sheet alone, on Letter paper ---- */
+  @media print {
+    @page {
+      size: letter;
+      margin: 0.6in 0.7in;
+    }
+    /* Doubled up to outrank the template's own cream paper, whichever stylesheet loads last. */
+    html[data-direction='classic']:root {
+      background: #fff;
+    }
+    .cl-top,
+    .cl-foot,
+    .cl-cv-intro,
+    .demo-bar {
+      display: none !important;
+    }
+    .cl.cl {
+      --paper: #fff;
+      font-size: 10.5pt;
+      background: #fff;
+    }
+    .cl .cl-section {
+      padding: 0;
+    }
+    .cl .cl-wrap {
+      width: auto;
+    }
+    .cl-cv-sheet {
+      max-width: none;
+      padding: 0;
+      border: 0;
+      box-shadow: none;
+      font-size: 10.5pt;
+    }
+    .cl .cl-cv-top h2 {
+      font-size: 26pt;
+    }
+    .cl-cv-profile {
+      font-size: 11.5pt;
+    }
+    .cl-cv-part {
+      margin-top: 18pt;
+    }
+    .cl .cl-cv-part h3 {
+      font-size: 8.5pt;
+      break-after: avoid;
+    }
+    .cl-cv-row {
+      grid-template-columns: 1.1in minmax(0, 1fr);
+      padding: 3pt 0;
+      break-inside: avoid;
+    }
+    .cl-cv-foot {
+      margin-top: 24pt;
+      font-size: 8pt;
+    }
+  }
+</style>

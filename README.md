@@ -107,11 +107,12 @@ webdle/
 │   ├── layouts/Base.astro       # html shell, JSON-LD, demo switcher
 │   ├── components/DemoSwitcher.astro
 │   ├── components/SearchPreview.astro  # demo bar "In Google" panel: the search listing + what the JSON-LD says
+│   ├── components/ClassicCV.astro  # Classic only: the CV page (one printable sheet; print styles keep just the sheet)
 │   ├── components/CalmScene.astro  # Calm only: one layered horizon (sky, sun, path on the water)
 │   ├── components/ShareTags.astro  # link-preview tags (Open Graph, Twitter card, canonical) for every page
 │   ├── templates/               # one full design per direction
 │   │   ├── Prestige.astro  Warmth.astro  Wow.astro  Calm.astro
-│   │   ├── Classic.astro        # the multi-page sample: one template, four pages (home, about, work, contact)
+│   │   ├── Classic.astro        # the multi-page sample: one template, five pages (home, about, work, contact, cv)
 │   │   └── index.ts             # direction -> template map
 │   ├── scripts/wow.ts           # Wow only: poster fitting, scroll (GSAP ScrollTrigger + Lenis)
 │   ├── scripts/wow-press.ts     # Wow only: WebGL2 ink renderer (three plates, overprint, grain)
@@ -123,12 +124,15 @@ webdle/
 │   └── pages/
 │       ├── index.astro          # webdle landing page / demo showcase
 │       ├── [direction]/[client].astro
-│       ├── classic/[client]/[...page].astro   # multi-page sample: /classic/<client>/, /about/, /work/, /contact/
+│       ├── classic/[client]/[...page].astro   # multi-page sample: /classic/<client>/, /about/, /work/, /contact/, /cv/
 │       └── 404.astro            # "no page at this address", in the landing page's look
 ├── public/
 │   ├── robots.txt               # allows everything; sample pages opt out with a noindex tag (Base.astro)
-│   └── og/                      # link-preview images, made by `npm run og`
+│   ├── og/                      # link-preview images, made by `npm run og`
+│   └── cv/                      # downloadable CV PDFs, made by `npm run cv` (rerun after a config change)
 ├── scripts/og.mjs               # photographs the top of each built page into public/og/
+├── scripts/cv.mjs               # prints each /classic/<client>/cv/ page into public/cv/<client>.pdf
+├── scripts/headless.mjs         # shared by og.mjs and cv.mjs: serves dist/ and drives headless Edge/Chrome
 ├── PRODUCT.md                   # product context for design tooling
 └── astro.config.mjs
 ```
