@@ -80,6 +80,40 @@ const services = [
     body: 'Content updates, maintenance and monitoring of how you appear online.',
   },
 ];
+
+/** Extras a client can ask for, each linked to where it works in the samples. */
+const addons = [
+  {
+    title: 'How you look in Google',
+    body: 'A preview of your search listing, and the facts your site gives search engines, in plain words.',
+    href: '/prestige/jane-teacher/#in-google',
+    where: "Jane's site",
+  },
+  {
+    title: 'Downloadable CV',
+    body: 'Your CV as a page and a one-page PDF, built from the same facts as the rest of the site.',
+    href: '/classic/jane-teacher/cv/',
+    where: "Jane's CV",
+  },
+  {
+    title: 'Speaking page',
+    body: 'The talks and workshops you offer, who each is for, and a way to ask about booking one.',
+    href: '/classic/jane-teacher/speaking/',
+    where: "Jane's talks",
+  },
+  {
+    title: 'Book pages',
+    body: 'A page for each book, with its cover, description, an excerpt, where to buy it and room for praise.',
+    href: '/classic/john-writer/books/leaving-tidewick/',
+    where: "John's book",
+  },
+  {
+    title: 'Newsletter sign-up',
+    body: 'A sign-up form for your readers, ready to connect to the mailing service you use.',
+    href: '/classic/john-writer/#newsletter',
+    where: "John's sign-up",
+  },
+];
 ---
 
 <!doctype html>
@@ -221,6 +255,28 @@ const services = [
           Search results depend on many factors outside anyone's control, so we do not promise
           specific rankings or timelines.
         </p>
+      </section>
+
+      <section class="lp-addons" aria-labelledby="lp-addons-h">
+        <h2 id="lp-addons-h" data-rv="up">Add what you need</h2>
+        <p class="lp-addons-lead" data-rv="rise">
+          Extras you can ask for on top of the site itself. Each one is working in the samples, so
+          you can try it before you decide.
+        </p>
+        <ul class="lp-addon-list">
+          {addons.map((a) => (
+            <li data-rv="row">
+              <a href={a.href}>
+                <h3>{a.title}</h3>
+                <p>{a.body}</p>
+                <span class="lp-addon-see">
+                  See {a.where}
+                  <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" /></svg>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section class="lp-contact" id="contact" aria-labelledby="lp-contact-h">
@@ -708,6 +764,86 @@ const services = [
     max-width: 40rem;
     font-size: 0.95rem;
     color: var(--muted);
+  }
+  .lp-addons {
+    padding: clamp(4rem, 8vw, 7rem) clamp(1.25rem, 5vw, 4rem);
+    border-top: 1px solid var(--line);
+  }
+  .lp-addons h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.15;
+  }
+  .lp-addons-lead {
+    margin: 1rem 0 0;
+    max-width: 40rem;
+    color: var(--muted);
+  }
+  .lp-addon-list {
+    display: grid;
+    /* Three across at most, so the five sit 3 + 2 rather than leaving one alone. */
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: 1rem;
+    margin: 2.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lp-addon-list a {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1.5rem 1.5rem 1.25rem;
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 0.3s, translate 0.4s var(--ease), box-shadow 0.4s var(--ease);
+  }
+  .lp-addon-list a:hover {
+    border-color: var(--accent);
+    translate: 0 -3px;
+    box-shadow: 0 18px 32px -24px oklch(0.3 0.05 255 / 0.5);
+  }
+  .lp-addon-list a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  .lp-addon-list h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1.35rem;
+    font-weight: 400;
+  }
+  .lp-addon-list p {
+    flex: 1;
+    margin: 0;
+    color: var(--muted);
+  }
+  .lp-addon-see {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1.25rem;
+    color: var(--accent);
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .lp-addon-see svg {
+    width: 0.9rem;
+    height: 0.9rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: translate 0.4s var(--ease);
+  }
+  .lp-addon-list a:hover .lp-addon-see svg {
+    translate: 3px 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lp-addon-list a,
+    .lp-addon-list a:hover {
+      translate: none;
+    }
   }
   .lp-contact {
     padding: clamp(4rem, 8vw, 7rem) clamp(1.25rem, 5vw, 4rem);

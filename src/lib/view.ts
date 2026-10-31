@@ -38,8 +38,11 @@ export const classic = {
   feeling: 'A whole site, page by page',
   blurb: 'Home, About, work and Contact as separate pages, bound like a book: green cloth, gilt and marbled endpapers.',
 } as const;
-/** `cv` is not in the site's menu; the About page links to it. */
-export const classicPages = ['home', 'about', 'work', 'contact', 'cv'] as const;
+/**
+ * `cv` is not in the site's menu; the About page links to it. `speaking` is made, and put in the
+ * menu, only for a client whose config has `speaking`.
+ */
+export const classicPages = ['home', 'about', 'work', 'speaking', 'contact', 'cv'] as const;
 /** Plus `book`: one page per book that has a `page` in the config, at /classic/<client>/books/<slug>/. */
 export type ClassicPage = (typeof classicPages)[number] | 'book';
 

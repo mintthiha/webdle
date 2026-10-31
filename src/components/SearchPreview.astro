@@ -115,6 +115,8 @@ const first = client.name.split(' ')[0];
   const dialog = document.getElementById('sp-dialog') as HTMLDialogElement | null;
   const open = document.querySelector<HTMLButtonElement>('.sp-open');
   open?.addEventListener('click', () => dialog?.showModal());
+  // A link to a sample with #in-google (the landing page's add-ons list) arrives with the panel open.
+  if (location.hash === '#in-google') dialog?.showModal();
   // A click on the dim backdrop (the dialog element itself, outside its inner panel) closes it.
   dialog?.addEventListener('click', (e) => {
     if (e.target === dialog) dialog.close();

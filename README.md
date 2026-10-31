@@ -109,11 +109,13 @@ webdle/
 │   ├── components/SearchPreview.astro  # demo bar "In Google" panel: the search listing + what the JSON-LD says
 │   ├── components/ClassicCV.astro  # Classic only: the CV page (one printable sheet; print styles keep just the sheet)
 │   ├── components/ClassicBook.astro  # Classic only: a book's own page (cover, description, stores, excerpt, praise placeholder)
+│   ├── components/ClassicSpeaking.astro  # Classic only: the Speaking page (only for a client whose config has `speaking`)
+│   ├── components/ClassicNewsletter.astro  # Classic only: newsletter sign-up on Home and book pages (says it is a demo; sends nothing)
 │   ├── components/CalmScene.astro  # Calm only: one layered horizon (sky, sun, path on the water)
 │   ├── components/ShareTags.astro  # link-preview tags (Open Graph, Twitter card, canonical) for every page
 │   ├── templates/               # one full design per direction
 │   │   ├── Prestige.astro  Warmth.astro  Wow.astro  Calm.astro
-│   │   ├── Classic.astro        # the multi-page sample: one template, five pages (home, about, work, contact, cv)
+│   │   ├── Classic.astro        # the multi-page sample: one template: home, about, work, speaking, contact, cv, and a page per book
 │   │   └── index.ts             # direction -> template map
 │   ├── scripts/wow.ts           # Wow only: poster fitting, scroll (GSAP ScrollTrigger + Lenis)
 │   ├── scripts/wow-press.ts     # Wow only: WebGL2 ink renderer (three plates, overprint, grain)
@@ -125,7 +127,7 @@ webdle/
 │   └── pages/
 │       ├── index.astro          # webdle landing page / demo showcase
 │       ├── [direction]/[client].astro
-│       ├── classic/[client]/[...page].astro   # multi-page sample: /classic/<client>/, /about/, /work/, /contact/, /cv/
+│       ├── classic/[client]/[...page].astro   # multi-page sample: /classic/<client>/, /about/, /work/, /speaking/, /contact/, /cv/
 │       ├── classic/[client]/books/[book].astro  # one page per book with a `page` in its config
 │       └── 404.astro            # "no page at this address", in the landing page's look
 ├── public/

@@ -1,0 +1,131 @@
+---
+/**
+ * A mailing-list sign-up for the Classic site. Sample sites are not connected to a mailing service,
+ * so a submitted form sends nothing: it checks the address, then says plainly that this is a demo.
+ */
+import type { Client } from '../schemas/client';
+
+interface Props {
+  newsletter: NonNullable<Client['newsletter']>;
+  firstName: string;
+}
+const { newsletter, firstName } = Astro.props;
+---
+
+<section class="cl-section cl-news" id="newsletter" aria-labelledby="cl-news-h">
+  <div class="cl-wrap">
+    <div class="cl-news-box" data-rv="rise">
+      <div>
+        <p class="cl-news-kicker">Newsletter</p>
+        <h2 id="cl-news-h">{newsletter.name}</h2>
+        <p class="cl-news-pitch">{newsletter.pitch}</p>
+      </div>
+      <div>
+        <form class="cl-news-form" novalidate>
+          <label for="cl-news-email">Email address</label>
+          <div class="cl-news-row">
+            <input id="cl-news-email" type="email" name="email" autocomplete="email" required aria-describedby="cl-news-msg" />
+            <button class="cl-btn cl-btn-gilt" type="submit">Subscribe</button>
+          </div>
+        </form>
+        <p class="cl-news-msg" id="cl-news-msg" role="status">Demo only. Nothing is sent from sample sites.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script define:vars={{ firstName }}>
+  const form = document.querySelector('.cl-news-form');
+  const input = document.getElementById('cl-news-email');
+  const msg = document.getElementById('cl-news-msg');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!input.checkValidity()) {
+      input.setAttribute('aria-invalid', 'true');
+      msg.textContent = 'Please enter an email address, like name@example.com.';
+      input.focus();
+      return;
+    }
+    input.removeAttribute('aria-invalid');
+    form.hidden = true;
+    msg.classList.add('is-done');
+    msg.textContent = `Thank you. On ${firstName}'s real site, this would add you to the list. This is a demo, so nothing was sent.`;
+  });
+</script>
+
+<style is:global>
+  .cl-news-box {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 2rem clamp(2rem, 6vw, 5rem);
+    align-items: center;
+    padding: clamp(2rem, 5vw, 3.5rem);
+    border-radius: 0.75rem;
+    background: var(--pine);
+    color: var(--paper);
+  }
+  .cl-news-kicker {
+    margin: 0 0 0.5rem;
+    color: var(--gilt);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .cl .cl-news-box h2 {
+    font-size: clamp(2rem, 4vw, 2.8rem);
+  }
+  .cl-news-pitch {
+    max-width: 30rem;
+    margin: 0.85rem 0 0;
+    color: color-mix(in oklab, var(--paper) 85%, var(--pine));
+  }
+  .cl-news-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+  }
+  .cl-news-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .cl-news-row input {
+    flex: 1 1 14rem;
+    min-width: 0;
+    padding: 0.7rem 1rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--paper);
+    color: var(--ink);
+    font: inherit;
+  }
+  .cl-news-row input[aria-invalid='true'] {
+    box-shadow: 0 0 0 3px var(--gilt);
+  }
+  .cl .cl-news-box :is(input, button):focus-visible {
+    outline: 2px solid var(--gilt);
+    outline-offset: 3px;
+  }
+  .cl-news-row .cl-btn {
+    border: 0;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .cl-news-msg {
+    margin: 0.85rem 0 0;
+    color: color-mix(in oklab, var(--paper) 80%, var(--pine));
+    font-size: 0.95rem;
+  }
+  .cl-news-msg.is-done {
+    margin: 0;
+    color: var(--paper);
+    font-size: 1.15rem;
+  }
+  @media (max-width: 56rem) {
+    .cl-news-box {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -13,6 +13,13 @@ const john: Writer = {
   tagline: 'Author of essays and fiction about places, memory, and the people who leave them.',
   location: 'Tidewick, Nova Scotia',
   sameAs: [],
+  // Written for this demo; the sign-up form is not connected on sample sites.
+  newsletter: {
+    name: 'Letters from Tidewick',
+    pitch:
+      'A short letter each season: new writing, upcoming readings, and what is on the desk. ' +
+      'Four a year at most.',
+  },
   bio:
     'John Writer writes essays and fiction about small coastal towns and the people who move away ' +
     'from them. His first book, Leaving Tidewick, follows one harbour town through a single winter. ' +

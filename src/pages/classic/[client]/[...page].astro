@@ -7,7 +7,7 @@ import type { Client } from '../../../schemas/client';
 /** The multi-page sample: /classic/<client>/ is Home, and each other page is a folder under it. */
 export function getStaticPaths() {
   return getClients().flatMap((client) =>
-    classicPages.map((page) => ({
+    classicPages.filter((page) => page !== 'speaking' || client.speaking).map((page) => ({
       params: { client: client.slug, page: page === 'home' ? undefined : page },
       props: { client, page },
     })),

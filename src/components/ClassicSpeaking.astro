@@ -1,0 +1,153 @@
+---
+/**
+ * The Classic site's Speaking page: the talks in the client's config, each with who it is for and
+ * its format, then a way to ask about one (the Contact page).
+ */
+import type { Client } from '../schemas/client';
+
+interface Props {
+  speaking: NonNullable<Client['speaking']>;
+  /** The endpaper art for the page-head strip, shared with the other Classic pages. */
+  endpaper: string;
+  contact: string;
+}
+const { speaking, endpaper, contact } = Astro.props;
+---
+
+<section class="cl-head">
+  <div class="cl-strip" aria-hidden="true"><div class="cl-paper" set:html={endpaper} /></div>
+  <div class="cl-wrap">
+    <h1 data-rv="up">Speaking <strong>and workshops</strong></h1>
+    <p data-rv="rise">{speaking.intro}</p>
+  </div>
+</section>
+
+<section class="cl-section cl-talks">
+  <div class="cl-wrap">
+    <ol class="cl-talk-list">
+      {speaking.talks.map((t, i) => (
+        <li class="cl-talk" data-rv="row">
+          <p class="cl-talk-n" aria-hidden="true">{String(i + 1).padStart(2, '0')}</p>
+          <div>
+            <h2>{t.title}</h2>
+            <p class="cl-talk-summary">{t.summary}</p>
+          </div>
+          <dl class="cl-talk-facts">
+            <div><dt>For</dt><dd>{t.audience}</dd></div>
+            <div><dt>Format</dt><dd>{t.format}</dd></div>
+          </dl>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<section class="cl-section cl-talk-ask">
+  <div class="cl-wrap">
+    <div class="cl-talk-box" data-rv="rise">
+      <div>
+        <h2>Planning <strong>an event?</strong></h2>
+        <p>Write with the date, who will be in the room, and what you hope they leave with.</p>
+      </div>
+      <a class="cl-btn cl-btn-gilt" href={contact} data-turn>Ask about a talk</a>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  .cl-talk-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--line);
+  }
+  .cl-talk {
+    display: grid;
+    grid-template-columns: 4rem minmax(0, 1fr) minmax(12rem, 17rem);
+    gap: 0.75rem clamp(1.5rem, 4vw, 3.5rem);
+    padding: clamp(2rem, 4vw, 2.75rem) 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .cl-talk-n {
+    margin: 0.35rem 0 0;
+    color: var(--gilt);
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+  .cl .cl-talk h2 {
+    font-size: clamp(1.7rem, 3vw, 2.3rem);
+  }
+  .cl-talk-summary {
+    max-width: 36rem;
+    margin: 0.85rem 0 0;
+    text-wrap: pretty;
+  }
+  .cl-talk-facts {
+    margin: 0.4rem 0 0;
+    font-size: 1.05rem;
+  }
+  .cl-talk-facts div + div {
+    margin-top: 0.9rem;
+  }
+  .cl-talk-facts dt {
+    color: var(--pine);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .cl-talk-facts dd {
+    margin: 0.15rem 0 0;
+  }
+  .cl-talks + .cl-talk-ask {
+    padding-top: 0;
+  }
+
+  /* ---- asking: a panel of the green cloth, the button in gilt ---- */
+  .cl-talk-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem 3rem;
+    padding: clamp(2rem, 5vw, 3.5rem);
+    border-radius: 0.75rem;
+    background: var(--pine);
+    color: var(--paper);
+  }
+  .cl .cl-talk-box h2 {
+    font-size: clamp(2rem, 4vw, 2.8rem);
+  }
+  .cl-talk-box p {
+    max-width: 30rem;
+    margin: 0.75rem 0 0;
+    color: color-mix(in oklab, var(--paper) 85%, var(--pine));
+  }
+  .cl .cl-talk-box a:focus-visible {
+    outline-color: var(--gilt);
+  }
+
+  @media (max-width: 56rem) {
+    .cl-talk {
+      grid-template-columns: 3rem minmax(0, 1fr);
+    }
+    .cl-talk-facts {
+      grid-column: 2;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 2rem;
+    }
+    .cl-talk-facts div + div {
+      margin-top: 0;
+    }
+  }
+  @media (max-width: 34rem) {
+    .cl-talk {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .cl-talk-facts {
+      grid-column: auto;
+    }
+  }
+</style>

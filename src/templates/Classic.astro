@@ -7,6 +7,8 @@ import { cover, landscape, marble, rosette } from '../lib/art';
 import { toView, type ClassicPage } from '../lib/view';
 import type { Client, Publication } from '../schemas/client';
 import ClassicBook from '../components/ClassicBook.astro';
+import ClassicSpeaking from '../components/ClassicSpeaking.astro';
+import ClassicNewsletter from '../components/ClassicNewsletter.astro';
 
 interface Props {
   client: Client;
@@ -24,9 +26,18 @@ const nav = [
   { page: 'home', href: base, label: 'Home' },
   { page: 'about', href: `${base}about/`, label: 'About' },
   { page: 'work', href: `${base}work/`, label: v.workLabel },
+  ...(client.speaking ? [{ page: 'speaking', href: `${base}speaking/`, label: 'Speaking' }] : []),
   { page: 'contact', href: `${base}contact/`, label: 'Contact' },
 ];
-const titles = { home: v.role, about: 'About', work: v.workLabel, contact: 'Contact', cv: 'CV', book: book?.title ?? '' };
+const titles = {
+  home: v.role,
+  about: 'About',
+  work: v.workLabel,
+  speaking: 'Speaking',
+  contact: 'Contact',
+  cv: 'CV',
+  book: book?.title ?? '',
+};
 /** Pages outside the menu mark the menu page they belong under. */
 const navPage = page === 'book' ? 'work' : page === 'cv' ? 'about' : page;
 
@@ -333,6 +344,12 @@ const record = v.education.length > 0 || v.roles.length > 0;
       {page === 'cv' && <ClassicCV client={client} endpaper={endpaper} />}
       {page === 'book' && book && (
         <ClassicBook book={book} cover={pubs.find((p) => p.title === book.title)!} back={`${base}work/`} />
+      )}
+      {page === 'speaking' && client.speaking && (
+        <ClassicSpeaking speaking={client.speaking} endpaper={endpaper} contact={`${base}contact/`} />
+      )}
+      {(page === 'home' || page === 'book') && client.newsletter && (
+        <ClassicNewsletter newsletter={client.newsletter} firstName={v.firstName} />
       )}
     </main>
 

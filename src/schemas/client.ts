@@ -10,6 +10,31 @@ const CommonFields = {
   location: z.string().optional(),
   /** Verified external profiles only. No placeholders, no guesses. */
   sameAs: z.array(z.url()).default([]),
+  /** A mailing-list sign-up. On sample sites the form is not connected and says so. */
+  newsletter: z
+    .object({
+      name: z.string().min(2),
+      pitch: z.string().min(20).max(220),
+    })
+    .optional(),
+  /** Talks and workshops on offer: gives the Classic site a Speaking page. */
+  speaking: z
+    .object({
+      intro: z.string().min(40),
+      talks: z
+        .array(
+          z.object({
+            title: z.string().min(2),
+            /** Who it is for, e.g. "Secondary English teachers". */
+            audience: z.string().min(2),
+            /** Kind and length, e.g. "Workshop, 90 minutes". */
+            format: z.string().min(2),
+            summary: z.string().min(40),
+          }),
+        )
+        .min(1),
+    })
+    .optional(),
 };
 
 const CredentialSchema = z.object({
