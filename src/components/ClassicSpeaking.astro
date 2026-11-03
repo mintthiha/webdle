@@ -4,20 +4,22 @@
  * its format, then a way to ask about one (the Contact page).
  */
 import type { Client } from '../schemas/client';
+import type { Strings } from '../lib/i18n';
 
 interface Props {
   speaking: NonNullable<Client['speaking']>;
   /** The endpaper art for the page-head strip, shared with the other Classic pages. */
   endpaper: string;
   contact: string;
+  t: Strings;
 }
-const { speaking, endpaper, contact } = Astro.props;
+const { speaking, endpaper, contact, t } = Astro.props;
 ---
 
 <section class="cl-head">
   <div class="cl-strip" aria-hidden="true"><div class="cl-paper" set:html={endpaper} /></div>
   <div class="cl-wrap">
-    <h1 data-rv="up">Speaking <strong>and workshops</strong></h1>
+    <h1 data-rv="up">{t.speaking.title[0]}<strong>{t.speaking.title[1]}</strong></h1>
     <p data-rv="rise">{speaking.intro}</p>
   </div>
 </section>
@@ -25,16 +27,16 @@ const { speaking, endpaper, contact } = Astro.props;
 <section class="cl-section cl-talks">
   <div class="cl-wrap">
     <ol class="cl-talk-list">
-      {speaking.talks.map((t, i) => (
+      {speaking.talks.map((talk, i) => (
         <li class="cl-talk" data-rv="row">
           <p class="cl-talk-n" aria-hidden="true">{String(i + 1).padStart(2, '0')}</p>
           <div>
-            <h2>{t.title}</h2>
-            <p class="cl-talk-summary">{t.summary}</p>
+            <h2>{talk.title}</h2>
+            <p class="cl-talk-summary">{talk.summary}</p>
           </div>
           <dl class="cl-talk-facts">
-            <div><dt>For</dt><dd>{t.audience}</dd></div>
-            <div><dt>Format</dt><dd>{t.format}</dd></div>
+            <div><dt>{t.speaking.for}</dt><dd>{talk.audience}</dd></div>
+            <div><dt>{t.speaking.format}</dt><dd>{talk.format}</dd></div>
           </dl>
         </li>
       ))}
@@ -46,10 +48,10 @@ const { speaking, endpaper, contact } = Astro.props;
   <div class="cl-wrap">
     <div class="cl-talk-box" data-rv="rise">
       <div>
-        <h2>Planning <strong>an event?</strong></h2>
-        <p>Write with the date, who will be in the room, and what you hope they leave with.</p>
+        <h2>{t.speaking.ask[0]}<strong>{t.speaking.ask[1]}</strong></h2>
+        <p>{t.speaking.askBody}</p>
       </div>
-      <a class="cl-btn cl-btn-gilt" href={contact} data-turn>Ask about a talk</a>
+      <a class="cl-btn cl-btn-gilt" href={contact} data-turn>{t.speaking.button}</a>
     </div>
   </div>
 </section>

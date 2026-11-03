@@ -1,5 +1,6 @@
 import type { Client, Publication } from '../schemas/client';
 import { toView } from './view';
+import { strings, type Lang } from './i18n';
 
 /**
  * What a client's site tells search engines about them, in one place: the page head prints it as
@@ -23,10 +24,13 @@ function venue(p: Publication) {
   return { isPartOf: { '@type': 'Periodical', name: p.venue } };
 }
 
-export function searchData(client: Client) {
-  const v = toView(client);
+/** `client` should already be in `lang` (i18n.ts `localize`). */
+export function searchData(client: Client, lang: Lang = 'en') {
+  const v = toView(client, lang);
   const site = client.domain.replace(/\/$/, '');
   const personId = `${site}/#person`;
+  /** The site's home in this language: the French one is under /fr/. */
+  const home = lang === 'fr' ? `${site}/fr/` : `${site}/`;
   const jobTitle = v.current?.role ?? v.role;
   const alumniOf = [...new Set(v.education.map((c) => c.institution))];
 
@@ -66,7 +70,14 @@ export function searchData(client: Client) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
-      { '@type': 'ProfilePage', '@id': `${site}/#page`, url: client.domain, name: client.name, mainEntity: { '@id': personId } },
+      {
+        '@type': 'ProfilePage',
+        '@id': `${home}#page`,
+        url: home,
+        name: client.name,
+        inLanguage: strings[lang].htmlLang,
+        mainEntity: { '@id': personId },
+      },
       person,
       ...works,
     ],

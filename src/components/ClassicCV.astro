@@ -6,14 +6,18 @@
  */
 import type { Client } from '../schemas/client';
 import { toView } from '../lib/view';
+import { strings, type Lang } from '../lib/i18n';
 
 interface Props {
+  /** Already in `lang` (i18n.ts `localize`). */
   client: Client;
+  lang: Lang;
   /** The endpaper art for the page-head strip, shared with the other Classic pages. */
   endpaper: string;
 }
-const { client, endpaper } = Astro.props;
-const v = toView(client);
+const { client, lang, endpaper } = Astro.props;
+const v = toView(client, lang);
+const t = strings[lang].cv;
 const teacher = client.archetype === 'teacher';
 const [first, ...rest] = client.name.split(' ');
 const host = new URL(client.domain).host;
@@ -23,27 +27,26 @@ const jobTitle = v.current?.role ?? v.role;
 type Block = 'teaching' | 'education' | 'publications';
 const order: Block[] = teacher ? ['teaching', 'education', 'publications'] : ['publications', 'education', 'teaching'];
 const has = { teaching: v.roles.length > 0, education: v.education.length > 0, publications: v.publications.length > 0 };
-const heading = { teaching: 'Teaching experience', education: 'Education', publications: 'Publications' };
+const heading = { teaching: t.teaching, education: t.education, publications: t.publications };
+/** The PDF that scripts/cv.mjs prints from this page. */
+const pdf = `/cv/${client.slug}${lang === 'en' ? '' : `-${lang}`}.pdf`;
 ---
 
 <section class="cl-head cl-cv-intro">
   <div class="cl-strip" aria-hidden="true"><div class="cl-paper" set:html={endpaper} /></div>
   <div class="cl-wrap">
-    <h1 data-rv="up">Curriculum <strong>vitae</strong></h1>
-    <p data-rv="rise">
-      {teacher ? 'Teaching, education and writing' : 'Writing and education'} on one page, ready to
-      download or print.
-    </p>
+    <h1 data-rv="up">{t.title[0]}<strong>{t.title[1]}</strong></h1>
+    <p data-rv="rise">{t.intro[client.archetype]}</p>
     <div class="cl-cv-actions" data-rv="rise">
-      <a class="cl-btn" href={`/cv/${client.slug}.pdf`} download={`${client.name} CV.pdf`}>Download PDF</a>
-      <button class="cl-btn cl-btn-line" type="button" data-print>Print</button>
+      <a class="cl-btn" href={pdf} download={t.file(client.name)}>{t.download}</a>
+      <button class="cl-btn cl-btn-line" type="button" data-print>{t.print}</button>
     </div>
   </div>
 </section>
 
 <section class="cl-section cl-cv">
   <div class="cl-wrap">
-    <article class="cl-cv-sheet" aria-label={`CV of ${client.name}`}>
+    <article class="cl-cv-sheet" aria-label={t.label(client.name)}>
       <header class="cl-cv-top">
         <h2>{first} <strong>{rest.join(' ')}</strong></h2>
         <p>{[jobTitle, client.location, host].filter(Boolean).map((part, i) => <>{i > 0 && ' · '}<span>{part}</span></>)}</p>
@@ -59,7 +62,7 @@ const heading = { teaching: 'Teaching experience', education: 'Education', publi
                 <p class="cl-cv-when">{v.period(r.startYear, r.endYear)}</p>
                 <div>
                   <p><strong>{r.role}</strong>, {[r.institution, r.department].filter(Boolean).join(', ')}</p>
-                  {r.courses.length > 0 && <p class="cl-cv-more">Courses: {r.courses.join(', ')}</p>}
+                  {r.courses.length > 0 && <p class="cl-cv-more">{t.courses}{r.courses.join(', ')}</p>}
                 </div>
               </div>
             ))}
@@ -78,7 +81,7 @@ const heading = { teaching: 'Teaching experience', education: 'Education', publi
               <div class="cl-cv-row">
                 <p class="cl-cv-when">{p.year}</p>
                 <div>
-                  <p>{p.type === 'book' ? <><em>{p.title}</em>.</> : <>“{p.title}.”</>} {p.venue}.</p>
+                  <p>{p.type === 'book' ? <><em>{p.title}</em>.</> : <>{t.quote[0]}{p.title}{t.quote[1]}</>} {p.venue}.</p>
                   <p class="cl-cv-more">{v.typeLabel[p.type]}</p>
                 </div>
               </div>
@@ -86,7 +89,7 @@ const heading = { teaching: 'Teaching experience', education: 'Education', publi
         </section>
       ))}
 
-      <p class="cl-cv-foot">Sample CV with fictional content, a demo by webdle.</p>
+      <p class="cl-cv-foot">{t.foot}</p>
     </article>
   </div>
 </section>

@@ -5,6 +5,7 @@ import Base from '../layouts/Base.astro';
 import ClassicCV from '../components/ClassicCV.astro';
 import { cover, landscape, marble, rosette } from '../lib/art';
 import { toView, type ClassicPage } from '../lib/view';
+import { classicHref, clientLangs, localize, strings, type Lang, type LocalPage } from '../lib/i18n';
 import type { Client, Publication } from '../schemas/client';
 import ClassicBook from '../components/ClassicBook.astro';
 import ClassicSpeaking from '../components/ClassicSpeaking.astro';
@@ -15,29 +16,38 @@ interface Props {
   page: ClassicPage;
   /** The book, on a `book` page. */
   book?: Publication;
+  lang?: Lang;
 }
-const { client, page, book } = Astro.props;
-const v = toView(client);
+const { client: source, page, book, lang = 'en' } = Astro.props;
+/** The client in this page's language, and the interface words to go with it. */
+const client = localize(source, lang);
+const t = strings[lang];
+const v = toView(client, lang);
 const s = client.slug;
 const teacher = client.archetype === 'teacher';
 
-const base = `/classic/${s}/`;
+/** A page of this site in this page's language. Book pages are English only, at /books/<slug>/. */
+const to = (p: LocalPage) => classicHref(client, lang, p);
+const bookHref = (slug: string) => `/classic/${s}/books/${slug}/`;
 const nav = [
-  { page: 'home', href: base, label: 'Home' },
-  { page: 'about', href: `${base}about/`, label: 'About' },
-  { page: 'work', href: `${base}work/`, label: v.workLabel },
-  ...(client.speaking ? [{ page: 'speaking', href: `${base}speaking/`, label: 'Speaking' }] : []),
-  { page: 'contact', href: `${base}contact/`, label: 'Contact' },
+  { page: 'home', href: to('home'), label: t.nav.home },
+  { page: 'about', href: to('about'), label: t.nav.about },
+  { page: 'work', href: to('work'), label: v.workLabel },
+  ...(client.speaking ? [{ page: 'speaking', href: to('speaking'), label: t.nav.speaking }] : []),
+  { page: 'contact', href: to('contact'), label: t.nav.contact },
 ];
 const titles = {
   home: v.role,
-  about: 'About',
+  about: t.nav.about,
   work: v.workLabel,
-  speaking: 'Speaking',
-  contact: 'Contact',
-  cv: 'CV',
+  speaking: t.nav.speaking,
+  contact: t.nav.contact,
+  cv: t.nav.cv,
   book: book?.title ?? '',
 };
+/** The same page in the site's other languages (none for a book page, which is English only). */
+const alternates = page === 'book' ? [] : clientLangs(source).map((l) => ({ lang: l, href: classicHref(source, l, page) }));
+const otherLangs = alternates.filter((a) => a.lang !== lang);
 /** Pages outside the menu mark the menu page they belong under. */
 const navPage = page === 'book' ? 'work' : page === 'cv' ? 'about' : page;
 
@@ -63,13 +73,13 @@ const pubs = v.publications.map((p, i) => ({
   cloth: `--cv-bg:${cloths[i % 3][0]};--cv-ink:${cloths[i % 3][1]}`,
   meta: `${v.typeLabel[p.type]} · ${p.venue}, ${p.year}`,
   /** The book's own page on this site, if it has one. */
-  page: p.page ? `${base}books/${p.page.slug}/` : undefined,
+  page: p.page ? bookHref(p.page.slug) : undefined,
 }));
 const seal = rosette({ seed: `${s}-cl-seal`, rings: 30 });
 const record = v.education.length > 0 || v.roles.length > 0;
 ---
 
-<Base client={client} direction="classic" title={`${client.name} · ${titles[page]}`} themeColor="#2f5a48" description={book?.page?.description[0]}>
+<Base client={client} direction="classic" title={`${client.name} · ${titles[page]}`} themeColor="#2f5a48" description={book?.page?.description[0]} lang={lang} alternates={alternates}>
   <script is:inline>
     // Hold the scroll reveals back until the script arrives; give the page back if it never does.
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -95,11 +105,18 @@ const record = v.education.length > 0 || v.roles.length > 0;
 
   <div class="cl" data-page={page}>
     <header class="cl-top">
-      <a class="cl-brand" href={base} data-turn>
+      <a class="cl-brand" href={to('home')} data-turn>
         <span class="cl-brand-name">{client.name}</span>
         <span class="cl-brand-line">{v.role}{client.location && <> · {client.location}</>}</span>
       </a>
-      <nav aria-label="Main">
+      {otherLangs.length > 0 && (
+        <ul class="cl-langs" aria-label={t.langLabel}>
+          {otherLangs.map((a) => (
+            <li><a href={a.href} hreflang={strings[a.lang].htmlLang} lang={strings[a.lang].htmlLang}>{strings[a.lang].langName}</a></li>
+          ))}
+        </ul>
+      )}
+      <nav aria-label={t.nav.main}>
         <ul>
           {nav.map((n) => (
             <li>
@@ -133,8 +150,8 @@ const record = v.education.length > 0 || v.roles.length > 0;
                   <p class="cl-lead-text">{client.tagline}</p>
                   <p class="cl-now"><span>{v.nowLabel}</span> {v.nowLine}</p>
                   <p class="cl-actions">
-                    <a class="cl-btn cl-btn-gilt" href={`${base}about/`} data-turn>More about {v.firstName}</a>
-                    <a class="cl-link" href={`${base}contact/`} data-turn>Get in touch</a>
+                    <a class="cl-btn cl-btn-gilt" href={to('about')} data-turn>{t.home.more(v.firstName)}</a>
+                    <a class="cl-link" href={to('contact')} data-turn>{t.home.touch}</a>
                   </p>
                 </div>
               </div>
@@ -144,9 +161,9 @@ const record = v.education.length > 0 || v.roles.length > 0;
           <section class="cl-section cl-teaser">
             <div class="cl-wrap">
               <div class="cl-teaser-head">
-                <h2 data-rv="up">{teacher ? <>What <strong>I teach</strong></> : <>Selected <strong>writing</strong></>}</h2>
-                <a class="cl-more" href={`${base}work/`} data-turn data-rv="rise">
-                  All {v.workLabel.toLowerCase()}
+                <h2 data-rv="up">{teacher ? <>{t.home.teach[0]}<strong>{t.home.teach[1]}</strong></> : <>{t.home.selected[0]}<strong>{t.home.selected[1]}</strong></>}</h2>
+                <a class="cl-more" href={to('work')} data-turn data-rv="rise">
+                  {t.home.all(v.workLabel)}
                   <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" /></svg>
                 </a>
               </div>
@@ -183,10 +200,10 @@ const record = v.education.length > 0 || v.roles.length > 0;
               <div class="cl-plate" data-rv="plate" set:html={plate('a', 640, 860)} />
             </div>
             <div class="cl-about-copy">
-              <h1 data-rv="up">Bio <strong>and credentials</strong></h1>
+              <h1 data-rv="up">{t.about.title[0]}<strong>{t.about.title[1]}</strong></h1>
               <p class="cl-bio" data-rv="rise">{client.bio}</p>
               <p class="cl-now cl-now-ink" data-rv="rise"><span>{v.nowLabel}</span> {v.nowLine}</p>
-              <p class="cl-about-cv" data-rv="rise"><a class="cl-btn" href={`${base}cv/`} data-turn>View and download CV</a></p>
+              <p class="cl-about-cv" data-rv="rise"><a class="cl-btn" href={to('cv')} data-turn>{t.about.cv}</a></p>
             </div>
           </section>
 
@@ -196,16 +213,16 @@ const record = v.education.length > 0 || v.roles.length > 0;
                 <div>
                   <h2 data-rv="up">
                     {v.education.length > 0 && v.roles.length > 0 ? (
-                      <>Education <strong>and teaching</strong></>
+                      <>{t.about.both[0]}<strong>{t.about.both[1]}</strong></>
                     ) : v.education.length > 0 ? (
-                      'Education'
+                      t.about.education
                     ) : (
-                      'Teaching'
+                      t.about.teaching
                     )}
                   </h2>
                   {v.education.length > 0 && (
                     <details class="cl-box" open data-rv="rise">
-                      <summary><span class="cl-sign" aria-hidden="true" />Education</summary>
+                      <summary><span class="cl-sign" aria-hidden="true" />{t.about.education}</summary>
                       <ul>
                         {v.education.map((c) => (
                           <li>
@@ -217,7 +234,7 @@ const record = v.education.length > 0 || v.roles.length > 0;
                   )}
                   {v.roles.length > 0 && (
                     <details class="cl-box" open data-rv="rise">
-                      <summary><span class="cl-sign" aria-hidden="true" />Teaching</summary>
+                      <summary><span class="cl-sign" aria-hidden="true" />{t.about.teaching}</summary>
                       {v.roles.map((r) => (
                         <div class="cl-role">
                           <p>
@@ -244,7 +261,7 @@ const record = v.education.length > 0 || v.roles.length > 0;
           <section class="cl-head">
             <div class="cl-strip" aria-hidden="true"><div class="cl-paper" set:html={endpaper} /></div>
             <div class="cl-wrap">
-              <h1 data-rv="up">{teacher ? <>Teaching <strong>and courses</strong></> : <>Selected <strong>writing</strong></>}</h1>
+              <h1 data-rv="up">{teacher ? <>{t.work.teacherTitle[0]}<strong>{t.work.teacherTitle[1]}</strong></> : <>{t.home.selected[0]}<strong>{t.home.selected[1]}</strong></>}</h1>
               {teacher && <p data-rv="rise"><span>{v.nowLabel}</span> {v.nowLine}</p>}
             </div>
           </section>
@@ -257,9 +274,9 @@ const record = v.education.length > 0 || v.roles.length > 0;
                   <h2 data-rv="up">{pubs[0].title}</h2>
                   <p class="cl-meta" data-rv="rise">{pubs[0].meta}</p>
                   {pubs[0].page ? (
-                    <a class="cl-btn" href={pubs[0].page} data-turn data-rv="rise">About the book</a>
+                    <a class="cl-btn" href={pubs[0].page} data-turn data-rv="rise">{t.work.aboutBook}</a>
                   ) : (
-                    pubs[0].url && <a class="cl-btn" href={pubs[0].url} data-rv="rise">Read it</a>
+                    pubs[0].url && <a class="cl-btn" href={pubs[0].url} data-rv="rise">{t.work.read}</a>
                   )}
                 </div>
               </div>
@@ -269,7 +286,7 @@ const record = v.education.length > 0 || v.roles.length > 0;
           {v.roles.length > 0 && (
             <section class="cl-section cl-posts">
               <div class="cl-wrap">
-                {!teacher && <h2 data-rv="up">Teaching</h2>}
+                {!teacher && <h2 data-rv="up">{t.work.teaching}</h2>}
                 {v.roles.map((r) => (
                   <article class="cl-post" data-rv="row">
                     <p class="cl-post-when">{v.period(r.startYear, r.endYear)}</p>
@@ -287,7 +304,7 @@ const record = v.education.length > 0 || v.roles.length > 0;
           {(teacher ? pubs : pubs.slice(1)).length > 0 && (
             <section class="cl-section cl-also">
               <div class="cl-wrap">
-                <h2 data-rv="up">{teacher ? <>Published <strong>writing</strong></> : <>Also <strong>published</strong></>}</h2>
+                <h2 data-rv="up">{teacher ? <>{t.work.published[0]}<strong>{t.work.published[1]}</strong></> : <>{t.work.also[0]}<strong>{t.work.also[1]}</strong></>}</h2>
                 <ul class="cl-pubs">
                   {(teacher ? pubs : pubs.slice(1)).map((p) => (
                     <li data-rv="row">
@@ -316,11 +333,9 @@ const record = v.education.length > 0 || v.roles.length > 0;
           <section class="cl-head cl-head-center">
             <div class="cl-strip" aria-hidden="true"><div class="cl-paper" set:html={endpaper} /></div>
             <div class="cl-wrap">
-              <h1 data-rv="up">Get <strong>in touch</strong></h1>
+              <h1 data-rv="up">{t.contact.title[0]}<strong>{t.contact.title[1]}</strong></h1>
               <p data-rv="rise">
-                {teacher
-                  ? 'For speaking, consulting and collaboration, write here.'
-                  : 'For press, events and rights enquiries, write here.'}
+                {teacher ? t.contact.teacher : t.contact.writer}
               </p>
             </div>
           </section>
@@ -329,39 +344,39 @@ const record = v.education.length > 0 || v.roles.length > 0;
               <div class="cl-plate" aria-hidden="true" data-rv="plate" set:html={plate('a', 640, 800)} />
               {/* [TODO: form endpoint] No form service chosen yet; the form is inert in this demo. */}
               <form class="cl-form">
-                <label data-rv="rise">Name<input type="text" name="name" autocomplete="name" /></label>
-                <label data-rv="rise">Email<input type="email" name="email" autocomplete="email" /></label>
-                <label data-rv="rise">Message<textarea name="message" rows="5"></textarea></label>
+                <label data-rv="rise">{t.contact.name}<input type="text" name="name" autocomplete="name" /></label>
+                <label data-rv="rise">{t.contact.email}<input type="email" name="email" autocomplete="email" /></label>
+                <label data-rv="rise">{t.contact.message}<textarea name="message" rows="5"></textarea></label>
                 <div class="cl-send" data-rv="rise">
-                  <button type="button" disabled>Send message</button>
-                  <p>Demo only. The form is not connected on sample sites.</p>
+                  <button type="button" disabled>{t.contact.send}</button>
+                  <p>{t.contact.demo}</p>
                 </div>
               </form>
             </div>
           </section>
         </>
       )}
-      {page === 'cv' && <ClassicCV client={client} endpaper={endpaper} />}
+      {page === 'cv' && <ClassicCV client={client} lang={lang} endpaper={endpaper} />}
       {page === 'book' && book && (
-        <ClassicBook book={book} cover={pubs.find((p) => p.title === book.title)!} back={`${base}work/`} />
+        <ClassicBook book={book} cover={pubs.find((p) => p.title === book.title)!} back={to('work')} t={t} />
       )}
       {page === 'speaking' && client.speaking && (
-        <ClassicSpeaking speaking={client.speaking} endpaper={endpaper} contact={`${base}contact/`} />
+        <ClassicSpeaking speaking={client.speaking} endpaper={endpaper} contact={to('contact')} t={t} />
       )}
       {(page === 'home' || page === 'book') && client.newsletter && (
-        <ClassicNewsletter newsletter={client.newsletter} firstName={v.firstName} />
+        <ClassicNewsletter newsletter={client.newsletter} firstName={v.firstName} t={t} />
       )}
     </main>
 
     <footer class="cl-foot">
-      <nav aria-label="Footer">
+      <nav aria-label={t.nav.footer}>
         <ul>
           {nav.map((n) => <li><a href={n.href} data-turn>{n.label}</a></li>)}
         </ul>
       </nav>
       <p>
         <span>© {new Date().getFullYear()} {client.name}</span>
-        <span>Sample site with fictional content, a demo by webdle.</span>
+        <span>{t.footer}</span>
       </p>
     </footer>
   </div>
@@ -527,6 +542,33 @@ const record = v.education.length > 0 || v.roles.length > 0;
     height: 3px;
     border-radius: 2px;
     background: var(--gilt);
+  }
+
+  /* The other language sits after the menu, as a small pill of its own. */
+  .cl-top nav {
+    margin-left: auto;
+  }
+  .cl-top .cl-langs {
+    order: 1;
+    display: flex;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 1rem;
+  }
+  .cl-langs a {
+    display: block;
+    padding: 0.2rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--pine);
+    text-decoration: none;
+    transition: background-color 0.3s, border-color 0.3s;
+  }
+  .cl-langs a:hover {
+    border-color: var(--pine);
+    background: var(--sage);
   }
 
   /* ---- buttons and links ---- */

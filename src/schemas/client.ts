@@ -1,5 +1,29 @@
 import { z } from 'zod';
 
+/**
+ * The French version of a client's own words (src/lib/i18n.ts merges it over the English). Lists
+ * follow the English entry for entry. Names of people, schools, publishers and published titles
+ * stay as they are, so those are left out here unless they really have a French form.
+ */
+const FrenchSchema = z.object({
+  /** The role word under the name; the default is epicene (Pédagogue), so this is only for a preference. */
+  role: z.string().min(2).optional(),
+  tagline: z.string().min(10).max(160),
+  location: z.string().optional(),
+  bio: z.string().min(100),
+  credentials: z.array(z.object({ degree: z.string().min(2), location: z.string().optional() })).optional(),
+  teaching: z
+    .array(z.object({ role: z.string().min(2), department: z.string().optional(), courses: z.array(z.string()).optional() }))
+    .optional(),
+  speaking: z
+    .object({
+      intro: z.string().min(40),
+      talks: z.array(z.object({ title: z.string().min(2), audience: z.string().min(2), format: z.string().min(2), summary: z.string().min(40) })),
+    })
+    .optional(),
+  newsletter: z.object({ name: z.string().min(2).optional(), pitch: z.string().min(20).max(220) }).optional(),
+});
+
 const CommonFields = {
   slug: z
     .string()
@@ -17,6 +41,7 @@ const CommonFields = {
       pitch: z.string().min(20).max(220),
     })
     .optional(),
+  translations: z.object({ fr: FrenchSchema.optional() }).optional(),
   /** Talks and workshops on offer: gives the Classic site a Speaking page. */
   speaking: z
     .object({
@@ -120,3 +145,4 @@ export type Credential = z.infer<typeof CredentialSchema>;
 export type TeachingRole = z.infer<typeof TeachingRoleSchema>;
 export type Publication = z.infer<typeof PublicationSchema>;
 export type BookPage = z.infer<typeof BookPageSchema>;
+export type French = z.infer<typeof FrenchSchema>;

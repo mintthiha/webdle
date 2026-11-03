@@ -1,4 +1,5 @@
 import { ClientSchema, type Client } from '../schemas/client';
+import { clientLangs, localize } from './i18n';
 
 const modules = import.meta.glob('/clients/*/config.ts', { eager: true }) as Record<
   string,
@@ -16,6 +17,8 @@ export function getClients(): Client[] {
     if (result.data.slug !== folder) {
       throw new Error(`Client slug "${result.data.slug}" does not match folder "${folder}" (${path})`);
     }
+    // A translation with a gap fails here, not halfway through a page.
+    for (const lang of clientLangs(result.data)) localize(result.data, lang);
     return result.data;
   });
 }

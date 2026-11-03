@@ -4,37 +4,40 @@
  * so a submitted form sends nothing: it checks the address, then says plainly that this is a demo.
  */
 import type { Client } from '../schemas/client';
+import type { Strings } from '../lib/i18n';
 
 interface Props {
   newsletter: NonNullable<Client['newsletter']>;
   firstName: string;
+  t: Strings;
 }
-const { newsletter, firstName } = Astro.props;
+const { newsletter, firstName, t } = Astro.props;
+const words = { invalid: t.news.invalid, thanks: t.news.thanks(firstName) };
 ---
 
 <section class="cl-section cl-news" id="newsletter" aria-labelledby="cl-news-h">
   <div class="cl-wrap">
     <div class="cl-news-box" data-rv="rise">
       <div>
-        <p class="cl-news-kicker">Newsletter</p>
+        <p class="cl-news-kicker">{t.news.kicker}</p>
         <h2 id="cl-news-h">{newsletter.name}</h2>
         <p class="cl-news-pitch">{newsletter.pitch}</p>
       </div>
       <div>
         <form class="cl-news-form" novalidate>
-          <label for="cl-news-email">Email address</label>
+          <label for="cl-news-email">{t.news.email}</label>
           <div class="cl-news-row">
             <input id="cl-news-email" type="email" name="email" autocomplete="email" required aria-describedby="cl-news-msg" />
-            <button class="cl-btn cl-btn-gilt" type="submit">Subscribe</button>
+            <button class="cl-btn cl-btn-gilt" type="submit">{t.news.subscribe}</button>
           </div>
         </form>
-        <p class="cl-news-msg" id="cl-news-msg" role="status">Demo only. Nothing is sent from sample sites.</p>
+        <p class="cl-news-msg" id="cl-news-msg" role="status">{t.news.demo}</p>
       </div>
     </div>
   </div>
 </section>
 
-<script define:vars={{ firstName }}>
+<script define:vars={{ words }}>
   const form = document.querySelector('.cl-news-form');
   const input = document.getElementById('cl-news-email');
   const msg = document.getElementById('cl-news-msg');
@@ -42,14 +45,14 @@ const { newsletter, firstName } = Astro.props;
     e.preventDefault();
     if (!input.checkValidity()) {
       input.setAttribute('aria-invalid', 'true');
-      msg.textContent = 'Please enter an email address, like name@example.com.';
+      msg.textContent = words.invalid;
       input.focus();
       return;
     }
     input.removeAttribute('aria-invalid');
     form.hidden = true;
     msg.classList.add('is-done');
-    msg.textContent = `Thank you. On ${firstName}'s real site, this would add you to the list. This is a demo, so nothing was sent.`;
+    msg.textContent = words.thanks;
   });
 </script>
 

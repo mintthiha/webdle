@@ -113,6 +113,12 @@ const addons = [
     href: '/classic/john-writer/#newsletter',
     where: "John's sign-up",
   },
+  {
+    title: 'French version',
+    body: 'Your whole site in Canadian French as well as English, with a switch between the two on every page.',
+    href: '/classic/jane-teacher/fr/',
+    where: "Jane's site in French",
+  },
 ];
 ---
 
@@ -226,7 +232,11 @@ const addons = [
                 <li>Home</li>
                 <li>About</li>
                 <li>Teaching or Writing</li>
+                <li>Speaking</li>
+                <li>Book pages</li>
+                <li>CV</li>
                 <li>Contact</li>
+                <li lang="fr-CA">Français</li>
               </ul>
               <div class="lp-links">
                 {clients.map((c) => (
@@ -780,7 +790,7 @@ const addons = [
   }
   .lp-addon-list {
     display: grid;
-    /* Three across at most, so the five sit 3 + 2 rather than leaving one alone. */
+    /* Three across at most, so the six sit in two even rows. */
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
     gap: 1rem;
     margin: 2.5rem 0 0;

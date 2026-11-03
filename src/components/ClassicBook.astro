@@ -5,6 +5,7 @@
  * placeholder until the config has real, sourced quotes; neither is ever filled with an invention.
  */
 import type { Publication } from '../schemas/client';
+import type { Strings } from '../lib/i18n';
 
 interface Props {
   book: Publication;
@@ -12,8 +13,9 @@ interface Props {
   cover: { art: string; cloth: string; meta: string };
   /** The page listing all the writing. */
   back: string;
+  t: Strings;
 }
-const { book, cover, back } = Astro.props;
+const { book, cover, back, t } = Astro.props;
 const page = book.page!;
 const unlinked = page.stores.some((s) => !s.url);
 ---
@@ -22,7 +24,7 @@ const unlinked = page.stores.some((s) => !s.url);
   <div class="cl-wrap">
     <a class="cl-book-back" href={back} data-turn>
       <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M13.5 8h-11M7 3.5 2.5 8 7 12.5" /></svg>
-      All writing
+      {t.book.back}
     </a>
   </div>
   <div class="cl-wrap cl-book-grid">
@@ -34,7 +36,7 @@ const unlinked = page.stores.some((s) => !s.url);
 
       {page.stores.length > 0 && (
         <div class="cl-book-buy" data-rv="rise">
-          <h2>Buy the book</h2>
+          <h2>{t.book.buy}</h2>
           <ul>
             {page.stores.map((s) => (
               <li>
@@ -46,7 +48,7 @@ const unlinked = page.stores.some((s) => !s.url);
               </li>
             ))}
           </ul>
-          {unlinked && <p class="cl-book-note">Demo only. Store links are not connected on sample sites.</p>}
+          {unlinked && <p class="cl-book-note">{t.book.storesDemo}</p>}
         </div>
       )}
     </div>
@@ -56,7 +58,7 @@ const unlinked = page.stores.some((s) => !s.url);
 {page.excerpt.length > 0 && (
   <section class="cl-section cl-excerpt" aria-labelledby="cl-excerpt-h">
     <div class="cl-wrap">
-      <h2 id="cl-excerpt-h" data-rv="up">From <strong>the book</strong></h2>
+      <h2 id="cl-excerpt-h" data-rv="up">{t.book.excerpt[0]}<strong>{t.book.excerpt[1]}</strong></h2>
       <div class="cl-excerpt-text" data-rv="rise">
         {page.excerpt.map((para) => <p>{para}</p>)}
       </div>
@@ -66,7 +68,7 @@ const unlinked = page.stores.some((s) => !s.url);
 
 <section class="cl-section cl-praise" aria-labelledby="cl-praise-h">
   <div class="cl-wrap">
-    <h2 id="cl-praise-h" data-rv="up">Praise</h2>
+    <h2 id="cl-praise-h" data-rv="up">{t.book.praise}</h2>
     {page.praise.length > 0 ? (
       <div class="cl-praise-grid">
         {page.praise.map((q) => (
@@ -78,11 +80,8 @@ const unlinked = page.stores.some((s) => !s.url);
       </div>
     ) : (
       <div class="cl-praise-empty" data-rv="rise">
-        <p><strong>Praise goes here.</strong></p>
-        <p>
-          Quotes from reviews and other writers are added once each one is checked against its source,
-          so nothing on the page is made up.
-        </p>
+        <p><strong>{t.book.praiseEmpty}</strong></p>
+        <p>{t.book.praiseEmptyBody}</p>
       </div>
     )}
   </div>

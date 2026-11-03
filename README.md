@@ -103,6 +103,7 @@ webdle/
 │   │   ├── clients.ts           # loads + validates every clients/*/config.ts
 │   │   ├── view.ts              # direction registry + per-client view model
 │   │   ├── seo.ts               # JSON-LD + the same facts in plain words (one source for both)
+│   │   ├── i18n.ts              # Classic site languages: interface words (en/fr), French page slugs, `localize` (merges translations.fr)
 │   │   └── art.ts               # seeded generative SVG art (no stock photos)
 │   ├── layouts/Base.astro       # html shell, JSON-LD, demo switcher
 │   ├── components/DemoSwitcher.astro
@@ -129,13 +130,14 @@ webdle/
 │       ├── [direction]/[client].astro
 │       ├── classic/[client]/[...page].astro   # multi-page sample: /classic/<client>/, /about/, /work/, /speaking/, /contact/, /cv/
 │       ├── classic/[client]/books/[book].astro  # one page per book with a `page` in its config
+│       ├── classic/[client]/fr/[...page].astro  # the French Classic site, for clients with `translations.fr` (/fr/a-propos/ …)
 │       └── 404.astro            # "no page at this address", in the landing page's look
 ├── public/
 │   ├── robots.txt               # allows everything; sample pages opt out with a noindex tag (Base.astro)
 │   ├── og/                      # link-preview images, made by `npm run og`
 │   └── cv/                      # downloadable CV PDFs, made by `npm run cv` (rerun after a config change)
 ├── scripts/og.mjs               # photographs the top of each built page into public/og/
-├── scripts/cv.mjs               # prints each /classic/<client>/cv/ page into public/cv/<client>.pdf
+├── scripts/cv.mjs               # prints each /classic/<client>/cv/ page into public/cv/<client>.pdf (and /fr/cv/ into <client>-fr.pdf)
 ├── scripts/headless.mjs         # shared by og.mjs and cv.mjs: serves dist/ and drives headless Edge/Chrome
 ├── PRODUCT.md                   # product context for design tooling
 └── astro.config.mjs

@@ -1,5 +1,6 @@
 import type { Client } from '../schemas/client';
 import type { Motif } from './art';
+import { strings, type Lang } from './i18n';
 
 export const directions = [
   {
@@ -48,7 +49,9 @@ export type ClassicPage = (typeof classicPages)[number] | 'book';
 
 export type DirectionSlug = (typeof directions)[number]['slug'] | typeof classic.slug;
 
-export function toView(client: Client) {
+/** `client` should already be in `lang` (i18n.ts `localize`); this adds the labels in that language. */
+export function toView(client: Client, lang: Lang = 'en') {
+  const t = strings[lang];
   const motif: Motif = client.archetype;
   const firstName = client.name.split(' ')[0];
   const lastName = client.name.split(' ').slice(1).join(' ');
@@ -59,17 +62,17 @@ export function toView(client: Client) {
   const courses = roles.flatMap((r) => r.courses.map((course) => ({ course, institution: r.institution })));
   const latest = publications[0];
   const since = roles.length ? Math.min(...roles.map((r) => r.startYear)) : undefined;
-  const typeLabel = { book: 'Book', article: 'Article', essay: 'Essay', story: 'Story', chapter: 'Chapter' } as const;
-  const period = (start: number, end: number | null) => `${start}–${end ?? 'Present'}`;
+  const typeLabel = t.type;
+  const period = (start: number, end: number | null) => `${start}–${end ?? t.present}`;
   /** The one factual line used for "now" moments: current role, or latest publication. */
   const nowLine = current
     ? `${current.role}, ${current.institution}`
     : latest
       ? `${latest.title}, ${latest.venue}, ${latest.year}`
       : client.tagline;
-  const nowLabel = current ? 'Currently' : 'Latest';
-  const workLabel = client.archetype === 'teacher' ? 'Teaching' : 'Writing';
-  const role = client.archetype === 'teacher' ? 'Educator' : 'Author';
+  const nowLabel = current ? t.now.current : t.now.latest;
+  const workLabel = t.workLabel[client.archetype];
+  const role = (lang === 'fr' && client.translations?.fr?.role) || t.role[client.archetype];
   return {
     motif,
     firstName,

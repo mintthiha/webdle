@@ -6,6 +6,7 @@ import ShareTags from '../components/ShareTags.astro';
 import SearchPreview from '../components/SearchPreview.astro';
 import { classic, directions, type DirectionSlug } from '../lib/view';
 import { searchData } from '../lib/seo';
+import { strings, type Lang } from '../lib/i18n';
 
 interface Props {
   client: Client;
@@ -14,18 +15,23 @@ interface Props {
   themeColor: string;
   /** The meta description; defaults to the tagline. */
   description?: string;
+  /** The page's language; `client` should already be in it. */
+  lang?: Lang;
+  /** This page in each language it exists in, for hreflang links. */
+  alternates?: { lang: Lang; href: string }[];
 }
 
-const { client, direction, title, themeColor, description = client.tagline } = Astro.props;
+const { client, direction, title, themeColor, description = client.tagline, lang = 'en', alternates = [] } = Astro.props;
+const abs = (p: string) => (Astro.site ? new URL(p, Astro.site).href : p);
 
-const { jsonLd } = searchData(client);
+const { jsonLd } = searchData(client, lang);
 /** This page's address on the client's own site: /classic/jane-teacher/about/ is /about/ there. */
 const sitePath = Astro.url.pathname.replace(`/${direction}/${client.slug}`, '') || '/';
 const design = [...directions, classic].find((d) => d.slug === direction)!.name;
 ---
 
 <!doctype html>
-<html lang="en" data-direction={direction}>
+<html lang={strings[lang].htmlLang} data-direction={direction}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -33,6 +39,7 @@ const design = [...directions, classic].find((d) => d.slug === direction)!.name;
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    {alternates.length > 1 && alternates.map((a) => <link rel="alternate" hreflang={strings[a.lang].htmlLang} href={abs(a.href)} />)}
     {/* Sample sites are about fictional people, so search engines are asked to leave them out. */}
     <meta name="robots" content="noindex" />
     <ShareTags
